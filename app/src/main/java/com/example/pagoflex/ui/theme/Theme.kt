@@ -1,53 +1,57 @@
 package com.example.pagoflex.ui.theme
 
-
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
+// Paleta oscura: fondo oscuro y textos claros para mejorar la lectura.
 private val EsquemaOscuro = darkColorScheme(
     primary = PrimarioClaro,
-    onPrimary = PrimarioClaro,
+    onPrimary = PrimarioOscuro,
     primaryContainer = PrimarioOscuro,
-    onPrimaryContainer = PrimarioClaro,
-    secondary = Secundario,
-    onSecondary = Blanco,
-    tertiary = Acento,
+    onPrimaryContainer = Blanco,
+
+    // Verde lima para las acciones, con texto oscuro encima.
+    secondary = Acento,
+    onSecondary = AcentoOscuro,
+
+    // Turquesa como color de apoyo.
+    tertiary = Secundario,
     onTertiary = Blanco,
+
     background = FondoOscuro,
     onBackground = TextoClaro,
     surface = SuperficieOscura,
     onSurface = TextoClaro
-
 )
 
+// Paleta clara: colores tomados del diseño de Figma.
 private val EsquemaClaro = lightColorScheme(
     primary = Primario,
     onPrimary = Blanco,
     primaryContainer = PrimarioClaro,
     onPrimaryContainer = PrimarioOscuro,
-    secondary = Secundario,
-    onSecondary = Blanco,
-    tertiary = Acento,
+
+    // Verde lima para el botón principal.
+    secondary = Acento,
+    onSecondary = AcentoOscuro,
+
+    // Turquesa como color de apoyo.
+    tertiary = Secundario,
     onTertiary = Blanco,
+
     background = FondoClaro,
     onBackground = TextoOscuro,
     surface = SuperficieClara,
     onSurface = TextoOscuro
 )
 
-//Border Radius
+// Formas redondeadas de los componentes Material 3.
 private val Formas = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
@@ -57,16 +61,11 @@ private val Formas = Shapes(
 @Composable
 fun PagoFlexTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
+
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
         darkTheme -> EsquemaOscuro
         else -> EsquemaClaro
     }

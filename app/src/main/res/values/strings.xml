@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PagoFlex</string>
-    <!-- para pantalla de formulario-->
+
+    <!-- Textos de la pantalla de formulario -->
     <string name="titulo_formulario">Crear cuenta</string>
-    <string name="banner_titulo">Unete ala comunidad</string>
+    <string name="banner_titulo">Únete a la comunidad</string>
     <string name="banne_subtitulo">Completa los datos en menos de un minuto</string>
     <string name="seccion_datos">Datos personales</string>
     <string name="seccion_preferencias">Preferencias</string>
-    <string name="campo_nombre">Nombre completo</string>
-    <string name="campo_correo">Correo electronico</string>
-    <string name="campo_contrasena">Contraseña</string>
-    <string name="opcion_noticia">Recibir novedeades por correo</string>
-    <string name="etiqueta_nivel">Nivel de experiencia</string>
-    <string name="opcion_terminos">Acepto los terminos y condiciones</string>
-    <string name="btn_registrar">Registrarme</string>
-    <string name="btn_limpiar">Limpiar</string>
-    <string name="registro_exitoso">Registro Exitoso. Bienvenid@ %1$s</string>
 
-    <!-- para pantalla de perfil-->
+    <string name="campo_nombre">Nombre completo</string>
+    <string name="campo_correo">Correo electrónico</string>
+    <string name="campo_contrasena">Contraseña</string>
+    <string name="campo_repetir_contrasena">Repetir contraseña</string>
+
+    <string name="opcion_noticia">Recibir novedades por correo</string>
+    <string name="opcion_terminos">Acepto los términos y condiciones</string>
+
+    <string name="btn_registrar">Crear cuenta</string>
+    <string name="btn_limpiar">Limpiar</string>
+    <string name="registro_exitoso">Registro exitoso. ¡Bienvenido/a %1$s!</string>
+
+    <!-- Textos para la pantalla de perfil -->
     <string name="titulo_perfil">Mi perfil</string>
-    <string name="seccion_sobre_mi">Sobre mi</string>
+    <string name="seccion_sobre_mi">Sobre mí</string>
     <string name="seccion_intereses">Intereses</string>
     <string name="btn_seguir">Seguir</string>
-    <string name="btn_siguiendo">Siguendo</string>
+    <string name="btn_siguiendo">Siguiendo</string>
 
-    <!-- descripciones una accesibilidad (TalkBack)-->
-    <string name="cd_banner">Ilustracion de un formulario</string>
+    <!-- Descripciones de accesibilidad para TalkBack -->
+    <string name="cd_banner">Ilustración de un formulario</string>
     <string name="cd_portada">Paisaje de montañas al atardecer</string>
     <string name="cd_avatar">Foto de perfil</string>
     <string name="cd_mostrar_contrasena">Mostrar contraseña</string>
     <string name="cd_ocultar_contrasena">Ocultar contraseña</string>
-
 </resources>
