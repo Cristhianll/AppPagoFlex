@@ -92,7 +92,7 @@ fun FormularioScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Tarjeta contenedora de Datos Personales
+            // Tarjeta contenedora de Datos Personales de usuario
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),

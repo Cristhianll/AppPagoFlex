@@ -179,7 +179,7 @@ fun DashboardScreen(
                     Column {
                         Text("TU RACHA DE PAGOS", color = ColorAzulOscuro.copy(alpha = 0.7f), fontSize = 12.sp, letterSpacing = 0.5.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("¡Llevas 4 meses en racha pagando!", color = ColorAzulOscuro, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("¡Llevas 5 meses en racha pagando!", color = ColorAzulOscuro, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Continúa pagando a tiempo para mantener tu buen hábito financiero.", color = ColorAzulOscuro.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
