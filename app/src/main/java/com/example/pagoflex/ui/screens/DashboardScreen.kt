@@ -167,7 +167,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Tarjeta de Racha de Pagos
+            // Tarjeta de Racha de Pagos en inicio
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
