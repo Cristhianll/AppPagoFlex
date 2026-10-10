@@ -20,22 +20,7 @@ import com.example.pagoflex.ui.styles.EstilosBoton
 import com.example.pagoflex.ui.styles.estiloAltoBoton
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 
-// =====================================================================
-//  BotonPrincipal.kt  —  COMPONENTE REUTILIZABLE
-//  ---------------------------------------------------------------------
-//  Un componente es una función @Composable que:
-//   1) recibe DATOS por parámetro (texto, habilitado, icono)
-//   2) recibe EVENTOS por parámetro (onClick: () -> Unit)
-//   3) NO conoce el ViewModel: solo dibuja.
-//
-//  El parámetro "modifier" (valor por defecto Modifier) permite que la
-//  pantalla decida el ancho: fillMaxWidth(), weight(1f), etc.
-// =====================================================================
 
-/**
- * Botón de acción principal (relleno, con sombra y ícono opcional).
- * @param icono recurso R.drawable.xxx, o null si no lleva ícono.
- */
 @Composable
 fun BotonPrincipal(
     texto: String,

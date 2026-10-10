@@ -1,245 +1,316 @@
 package com.example.pagoflex.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import cl.duocuc.pagoflex.ui.components.TarjetaSeccion
-import com.example.pagoflex.R
-import com.example.pagoflex.model.FormularioUiState
-import com.example.pagoflex.ui.components.BotonPrincipal
-import com.example.pagoflex.ui.components.BotonSecundario
-import com.example.pagoflex.ui.components.CampoContrasena
-import com.example.pagoflex.ui.components.CampoTexto
-import com.example.pagoflex.ui.components.CasillaConTexto
-import com.example.pagoflex.ui.components.ImagenEncabezado
-import com.example.pagoflex.ui.components.InterruptorConTexto
-import com.example.pagoflex.ui.theme.Dimens
-import com.example.pagoflex.ui.theme.Exito
-import com.example.pagoflex.ui.theme.ExitoFondo
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.pagoflex.viewmodel.FormularioViewModel
 
-@Composable
-fun FormularioScreen(
-    viewModel: FormularioViewModel = viewModel()
-) {
-    // Observa el StateFlow y actualiza la interfaz cuando cambia el estado.
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    FormularioContent(
-        uiState = uiState,
-        onNombreCambia = viewModel::onNombreCambia,
-        onCorreoCambia = viewModel::onCorreoCambia,
-        onContrasenaCambia = viewModel::onContrasenaCambia,
-        onAlternarVisibilidad = viewModel::onAlternarVisibilidad,
-
-        // Eventos del campo "Repetir contraseña".
-        onRepetirCambia = viewModel::onRepetirCambia,
-        onAlternarRepetirVisibilidad = viewModel::onAlternarRepetirVisibilidad,
-
-        onNoticiasCambia = viewModel::onNoticiasCambia,
-        onTerminoCambia = viewModel::onTerminosCambia,
-        onRegistrar = viewModel::onRegistrar,
-        onLimpiar = viewModel::onLimpiar
-    )
-}
+val AzulOscuroFondo = Color(0xFF001F3F)
+val VerdeClaroAccento = Color(0xFFD4ED91)
+val BlancoTarjeta = Color.White
+val TextoOscuroPrincipal = Color(0xFF0F172A)
+val ColorBordeCampo = Color(0xFF64748B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormularioContent(
-    uiState: FormularioUiState,
-    onNombreCambia: (String) -> Unit,
-    onCorreoCambia: (String) -> Unit,
-    onContrasenaCambia: (String) -> Unit,
-    onAlternarVisibilidad: () -> Unit,
-    onRepetirCambia: (String) -> Unit,
-    onAlternarRepetirVisibilidad: () -> Unit,
-    onNoticiasCambia: (Boolean) -> Unit,
-    onTerminoCambia: (Boolean) -> Unit,
-    onRegistrar: () -> Unit,
-    onLimpiar: () -> Unit
+fun FormularioScreen(
+    viewModel: FormularioViewModel
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(stringResource(R.string.titulo_formulario))
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    titleContentColor = MaterialTheme.colorScheme.onSecondary
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
+    val uiState by viewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AzulOscuroFondo)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ImagenEncabezado(
-                imagen = R.drawable.banner_registro,
-                descripcion = stringResource(R.string.cd_banner),
-                titulo = stringResource(R.string.banner_titulo),
-                subtitulo = stringResource(R.string.banne_subtitulo)
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // --- CABECERA CON LOGO Y NOMBRE PAGOFLEX ---
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(VerdeClaroAccento, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "P",
+                        color = AzulOscuroFondo,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "PagoFlex",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Título de la pantalla
+            Text(
+                text = "Crear cuenta",
+                color = VerdeClaroAccento,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Completa los datos en menos de un minuto",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 15.sp
             )
 
-            Column(
-                modifier = Modifier.padding(Dimens.espacioPantalla),
-                verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Tarjeta contenedora de Datos Personales de usuario
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = BlancoTarjeta),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                // Tarjeta de datos personales.
-                TarjetaSeccion(
-                    titulo = stringResource(R.string.seccion_datos)
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    CampoTexto(
-                        valor = uiState.nombre,
-                        onValorCambia = onNombreCambia,
-                        etiqueta = stringResource(R.string.campo_nombre),
-                        icono = R.drawable.ic_persona,
-                        error = uiState.errorNombre
+                    Text(
+                        text = "Datos personales",
+                        color = AzulOscuroFondo,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
 
-                    CampoTexto(
-                        valor = uiState.correo,
-                        onValorCambia = onCorreoCambia,
-                        etiqueta = stringResource(R.string.campo_correo),
-                        icono = R.drawable.ic_correo,
-                        error = uiState.errorCorreo,
-                        tipoTeclado = KeyboardType.Email
+                    // Campo Nombre
+                    OutlinedTextField(
+                        value = uiState.nombre,
+                        onValueChange = { viewModel.onNombreCambia(it) },
+                        label = { Text("Nombre completo") },
+                        singleLine = true, // Evita saltos de línea accidentales
+                        isError = uiState.errorNombre != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AzulOscuroFondo,
+                            unfocusedBorderColor = ColorBordeCampo,
+                            focusedTextColor = TextoOscuroPrincipal,
+                            unfocusedTextColor = TextoOscuroPrincipal,
+                            focusedLabelColor = AzulOscuroFondo,
+                            unfocusedLabelColor = ColorBordeCampo
+                        )
                     )
+                    if (uiState.errorNombre != null) {
+                        Text(text = uiState.errorNombre!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
 
-                    CampoContrasena(
-                        valor = uiState.contrasena,
-                        onValorCambia = onContrasenaCambia,
-                        etiqueta = stringResource(R.string.campo_contrasena),
-                        visible = uiState.contrasenaVisible,
-                        onAlternarVisible = onAlternarVisibilidad,
-                        error = uiState.errorContrasena
+                    // Campo Correo
+                    OutlinedTextField(
+                        value = uiState.correo,
+                        onValueChange = { viewModel.onCorreoCambia(it) },
+                        label = { Text("Correo electrónico") },
+                        singleLine = true,
+                        isError = uiState.errorCorreo != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AzulOscuroFondo,
+                            unfocusedBorderColor = ColorBordeCampo,
+                            focusedTextColor = TextoOscuroPrincipal,
+                            unfocusedTextColor = TextoOscuroPrincipal,
+                            focusedLabelColor = AzulOscuroFondo,
+                            unfocusedLabelColor = ColorBordeCampo
+                        )
                     )
+                    if (uiState.errorCorreo != null) {
+                        Text(text = uiState.errorCorreo!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
 
-                    // Segundo campo: confirma la contraseña y tiene visibilidad independiente.
-                    CampoContrasena(
-                        valor = uiState.repetirContrasena,
-                        onValorCambia = onRepetirCambia,
-                        etiqueta = stringResource(R.string.campo_repetir_contrasena),
-                        visible = uiState.repetirVisible,
-                        onAlternarVisible = onAlternarRepetirVisibilidad,
-                        error = uiState.errorRepetir
+                    // Campo Contraseña
+                    OutlinedTextField(
+                        value = uiState.contrasena,
+                        onValueChange = { viewModel.onContrasenaCambia(it) },
+                        label = { Text("Contraseña") },
+                        singleLine = true,
+                        visualTransformation = if (uiState.contrasenaVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = uiState.errorContrasena != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        trailingIcon = {
+                            IconButton(onClick = { viewModel.onAlternarVisibilidad() }) {
+                                Text(if (uiState.contrasenaVisible) "👁️" else "🫣", fontSize = 16.sp)
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AzulOscuroFondo,
+                            unfocusedBorderColor = ColorBordeCampo,
+                            focusedTextColor = TextoOscuroPrincipal,
+                            unfocusedTextColor = TextoOscuroPrincipal,
+                            focusedLabelColor = AzulOscuroFondo,
+                            unfocusedLabelColor = ColorBordeCampo
+                        )
                     )
+                    if (uiState.errorContrasena != null) {
+                        Text(text = uiState.errorContrasena!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    // Campo Repetir Contraseña
+                    OutlinedTextField(
+                        value = uiState.repetirContrasena,
+                        onValueChange = { viewModel.onRepetirCambia(it) },
+                        label = { Text("Repetir contraseña") },
+                        singleLine = true,
+                        visualTransformation = if (uiState.repetirVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = uiState.errorRepetir != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        trailingIcon = {
+                            IconButton(onClick = { viewModel.onAlternarRepetirVisibilidad() }) {
+                                Text(if (uiState.repetirVisible) "👁️‍🗨️" else "🫣", fontSize = 16.sp)
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AzulOscuroFondo,
+                            unfocusedBorderColor = ColorBordeCampo,
+                            focusedTextColor = TextoOscuroPrincipal,
+                            unfocusedTextColor = TextoOscuroPrincipal,
+                            focusedLabelColor = AzulOscuroFondo,
+                            unfocusedLabelColor = ColorBordeCampo
+                        )
+                    )
+                    if (uiState.errorRepetir != null) {
+                        Text(text = uiState.errorRepetir!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
+            }
 
-                // Preferencias: se quitó el nivel de experiencia.
-                TarjetaSeccion(
-                    titulo = stringResource(R.string.seccion_preferencias)
+            // Tarjeta de Preferencias
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = BlancoTarjeta),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    InterruptorConTexto(
-                        texto = stringResource(R.string.opcion_noticia),
-                        activado = uiState.recibirNoticias,
-                        onCambio = onNoticiasCambia
-                    )
-                }
-
-                // Checkbox de términos y su mensaje de error, si corresponde.
-                Column {
-                    CasillaConTexto(
-                        texto = stringResource(R.string.opcion_terminos),
-                        marcado = uiState.aceptaTerminos,
-                        onCambio = onTerminoCambia
+                    Text(
+                        text = "Preferencias",
+                        color = AzulOscuroFondo,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
 
-                    uiState.errorTerminos?.let { mensaje ->
-                        Text(
-                            text = mensaje,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(Dimens.espacioChico)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Recibir novedades por correo", color = TextoOscuroPrincipal, fontSize = 14.sp)
+                        Switch(
+                            checked = uiState.recibirNoticias,
+                            onCheckedChange = { viewModel.onNoticiasCambia(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = VerdeClaroAccento,
+                                checkedTrackColor = AzulOscuroFondo
+                            )
                         )
                     }
                 }
-
-                // Botones Limpiar y Crear cuenta.
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
-                ) {
-                    BotonSecundario(
-                        texto = stringResource(R.string.btn_limpiar),
-                        onClick = onLimpiar,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    BotonPrincipal(
-                        texto = stringResource(R.string.btn_registrar),
-                        onClick = onRegistrar,
-                        icono = R.drawable.ic_check,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                // Se muestra solo cuando el formulario pasa todas las validaciones.
-                if (uiState.registroExitoso) {
-                    MensajeExito(nombre = uiState.nombre)
-                }
-
-                Spacer(Modifier.height(Dimens.espacioGrande))
             }
-        }
-    }
-}
 
-@Composable
-private fun MensajeExito(nombre: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = ExitoFondo,
-            contentColor = Exito
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(Dimens.espacioMedio),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_check),
-                contentDescription = null,
-                tint = Exito,
-                modifier = Modifier.size(Dimens.espacioMedio)
-            )
+            // Términos y condiciones
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                ) {
+                    Checkbox(
+                        checked = uiState.aceptaTerminos,
+                        onCheckedChange = { viewModel.onTerminosCambia(it) },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = VerdeClaroAccento,
+                            uncheckedColor = Color.White
+                        )
+                    )
+                    Text("Acepto los términos y condiciones", color = Color.White, fontSize = 14.sp)
+                }
 
-            Text(
-                text = stringResource(R.string.registro_exitoso, nombre),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(start = Dimens.espacioChico)
-            )
+                if (uiState.errorTerminos != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "⚠️ ${uiState.errorTerminos!!}",
+                        color = VerdeClaroAccento,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Botones de acción inferiores
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { viewModel.onLimpiar() },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                ) {
+                    Text("Limpiar", fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = { viewModel.onRegistrar() },
+                    modifier = Modifier
+                        .weight(1.5f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VerdeClaroAccento,
+                        contentColor = AzulOscuroFondo
+                    )
+                ) {
+                    Text("✓ Crear cuenta", fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
