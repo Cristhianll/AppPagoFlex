@@ -3,6 +3,7 @@ package com.example.pagoflex.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -14,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Definimos los colores con un sufijo o de forma interna para evitar conflictos con FormularioScreen
+
 private val DashAzulFondo = Color(0xFF001F3F)
 private val DashVerdeAccento = Color(0xFFD4ED91)
 private val DashTextoBlancoSuave = Color(0xFFE2E8F0)
@@ -25,11 +26,10 @@ private val DashFondoBlanca = Color(0xFFF8FAFC)
 @Composable
 fun DashboardScreen(
     nombreUsuario: String,
-    onVolverAlLogin: () -> Unit,
     onIrADetallePago: () -> Unit,
     onIrAPagos: () -> Unit,
-    onIrAHistorial:() -> Unit
-
+    onIrAHistorial: () -> Unit,
+    onAbrirPerfil: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -49,17 +49,13 @@ fun DashboardScreen(
                     icon = { Text("📄", fontSize = 20.sp) },
                     label = { Text("Pagos") },
                     selected = false,
-                    onClick = {
-                        onIrAPagos()
-                    }
+                    onClick = onIrAPagos
                 )
                 NavigationBarItem(
                     icon = { Text("🕒", fontSize = 20.sp) },
                     label = { Text("Historial") },
                     selected = false,
-                    onClick = {
-                        onIrAHistorial()
-                    }
+                    onClick = onIrAHistorial
                 )
             }
         }
@@ -74,7 +70,7 @@ fun DashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- CABECERA CON LOGO Y NOMBRE PAGOFLEX ---
+          //creacion logo user
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -104,14 +100,27 @@ fun DashboardScreen(
                     )
                 }
 
-                TextButton(onClick = onVolverAlLogin) {
-                    Text("Salir", color = DashVerdeAccento, fontWeight = FontWeight.SemiBold)
+                // Botón circular con la inicial del usuario que abre el perfil y configuración
+                IconButton(onClick = onAbrirPerfil) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(DashVerdeAccento, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (nombreUsuario.isNotBlank()) nombreUsuario.take(1).uppercase() else "M",
+                            color = DashAzulFondo,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- SALUDO ---
+
             Text(
                 text = "BUENOS DÍAS",
                 color = DashVerdeAccento,
@@ -121,7 +130,7 @@ fun DashboardScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "¡Hola, ${if (nombreUsuario.isBlank()) "Cristhian" else nombreUsuario}!",
+                text = "¡Hola, ${if (nombreUsuario.isBlank()) "Martina" else nombreUsuario}!",
                 color = Color.White,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
@@ -135,7 +144,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- TARJETA DE PRÓXIMO VENCIMIENTO ---
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
@@ -222,7 +231,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- TARJETA DE RACHA DE PAGOS ---
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),

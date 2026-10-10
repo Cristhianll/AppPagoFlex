@@ -22,9 +22,9 @@ class MainActivity : ComponentActivity() {
             PagoFlexTheme {
                 val uiState by viewModel.uiState.collectAsState()
 
-                // Estados de navegación posibles: "inicio", "detallePago", "pagoExitoso", "historial"
-                var pantallaActual by remember { mutableStateOf("inicio") }
 
+                var pantallaActual by remember { mutableStateOf("inicio") }
+                var verPerfil by remember{mutableStateOf(false)}
                 if (!uiState.registroExitoso) {
                     FormularioScreen(viewModel = viewModel)
                 } else {
@@ -52,10 +52,6 @@ class MainActivity : ComponentActivity() {
                         else -> {
                             DashboardScreen(
                                 nombreUsuario = uiState.nombre,
-                                onVolverAlLogin = {
-                                    pantallaActual = "inicio"
-                                    viewModel.onLimpiar()
-                                },
                                 onIrADetallePago = {
                                     pantallaActual = "detallePago"
                                 },
@@ -64,6 +60,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onIrAHistorial = {
                                     pantallaActual = "historial"
+                                },
+                                onAbrirPerfil = {
+                                    verPerfil = true
                                 }
                             )
                         }
