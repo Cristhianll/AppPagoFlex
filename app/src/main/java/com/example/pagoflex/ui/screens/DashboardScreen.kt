@@ -28,7 +28,7 @@ fun DashboardScreen(
     onVolverAlLogin: () -> Unit,
     onIrADetallePago: () -> Unit,
     onIrAPagos: () -> Unit,
-    onIrHistorial:() -> Unit
+    onIrAHistorial:() -> Unit
 
 ) {
     val scrollState = rememberScrollState()
@@ -58,7 +58,7 @@ fun DashboardScreen(
                     label = { Text("Historial") },
                     selected = false,
                     onClick = {
-                        onIrHistorial()
+                        onIrAHistorial()
                     }
                 )
             }

@@ -9,6 +9,7 @@ import com.example.pagoflex.ui.screens.DashboardScreen
 import com.example.pagoflex.ui.screens.DetallePagoScreen
 import com.example.pagoflex.ui.screens.FormularioScreen
 import com.example.pagoflex.ui.screens.HistorialScreen
+import com.example.pagoflex.ui.screens.PagoExitosoScreen
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.FormularioViewModel
 
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
             PagoFlexTheme {
                 val uiState by viewModel.uiState.collectAsState()
 
-                // Variable de control de navegación: "inicio", "detallePago", "historial"
+                // Estados de navegación posibles: "inicio", "detallePago", "pagoExitoso", "historial"
                 var pantallaActual by remember { mutableStateOf("inicio") }
 
                 if (!uiState.registroExitoso) {
@@ -31,7 +32,15 @@ class MainActivity : ComponentActivity() {
                         "detallePago" -> {
                             DetallePagoScreen(
                                 onVolverAtras = { pantallaActual = "inicio" },
-                                onConfirmarPago = { pantallaActual = "inicio" }
+                                onConfirmarPago = {
+                                    pantallaActual = "pagoExitoso" // Al confirmar, va a la pantalla de éxito
+                                }
+                            )
+                        }
+                        "pagoExitoso" -> {
+                            PagoExitosoScreen(
+                                onVolverInicio = { pantallaActual = "inicio" },
+                                onVerHistorial = { pantallaActual = "historial" }
                             )
                         }
                         "historial" -> {
@@ -49,15 +58,14 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onIrADetallePago = {
                                     pantallaActual = "detallePago"
-                                }, {
+                                },
+                                onIrAPagos = {
                                     pantallaActual = "detallePago"
                                 },
-                                onIrHistorial = {
+                                onIrAHistorial = {
                                     pantallaActual = "historial"
                                 }
                             )
-
-
                         }
                     }
                 }

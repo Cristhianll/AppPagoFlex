@@ -1,7 +1,5 @@
 package com.example.pagoflex.ui.screens
 
-
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,7 +25,6 @@ fun HistorialScreen(
 ) {
     Scaffold(
         bottomBar = {
-            // Barra de navegación inferior funcional
             NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
                 NavigationBarItem(
                     icon = { Text("🏠", fontSize = 20.sp) },
@@ -54,152 +51,241 @@ fun HistorialScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(FondoAzul)
-                .padding(horizontal = 20.dp)
+                .background(Color(0xFFF8FAFC))
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Título de la pantalla
-            Text(
-                text = "Historial y Estado",
-                color = VerdeAccento,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Revisa tus cuentas pendientes y pagadas",
-                color = Color.White.copy(alpha = 0.8f),
-                fontSize = 14.sp
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxSize()
+            // --- CABECERA AZUL OSCURO ESTILO PROTOTIPO ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        FondoAzul,
+                        shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+                    )
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
-                // --- SECCIÓN: PENDIENTES ---
-                item {
+                Column {
                     Text(
-                        text = "⏳ POR PAGAR (PENDIENTES)",
+                        text = "TUS MOVIMIENTOS",
                         color = VerdeAccento,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 1.2.sp
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Historial de pagos",
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Consulta todos tus pagos realizados.",
+                        color = Color.White.copy(alpha = 0.75f),
+                        fontSize = 13.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Tarjeta flotante dentro de la cabecera
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = VerdeAccento)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .background(FondoAzul, RoundedCornerShape(10.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("📄", fontSize = 18.sp)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text("TOTAL PAGADO EN 2025", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = FondoAzul.copy(alpha = 0.7f))
+                                    Text("$233,330", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FondoAzul)
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .background(FondoAzul, RoundedCornerShape(14.dp))
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                            ) {
+                                Text("4 pagos", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- CONTENIDO DE LA LISTA ---
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
+            ) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📅", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Octubre 2025", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextoOscuro)
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White,
+                            shadowElevation = 1.dp
+                        ) {
+                            Text(
+                                text = "Todos",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextoOscuro
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
 
                 item {
-                    ItemHistorialCard(
-                        titulo = "Inmobiliaria del Parque",
-                        concepto = "Arriendo / Gasto Común",
-                        monto = "$125,000 CLP",
-                        fecha = "Vence 15 Oct",
-                        estado = "Pendiente",
-                        colorEstado = Color(0xFFF59E0B) // Naranja advertencia
-                    )
-                }
-
-                item {
-                    ItemHistorialCard(
+                    ItemHistorialPrototipo(
                         titulo = "Enel Distribución",
-                        concepto = "Cuenta de Luz - Mensual",
-                        monto = "$34,500 CLP",
-                        fecha = "Vence 22 Oct",
-                        estado = "Pendiente",
-                        colorEstado = Color(0xFFF59E0B)
+                        concepto = "Cuenta de Agua - Consumo Mensual",
+                        monto = "$125,000",
+                        fecha = "10 Oct, 2025"
                     )
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "✅ PAGADOS",
-                        color = VerdeAccento,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                }
-
-                // --- SECCIÓN: HISTORIAL DE PAGADOS IMPLEMENTADA---
-                item {
-                    ItemHistorialCard(
+                    ItemHistorialPrototipo(
                         titulo = "Aguas Andinas",
-                        concepto = "Consumo de Agua",
-                        monto = "$18,900 CLP",
-                        fecha = "Pagado el 10 Sep",
-                        estado = "Pagado",
-                        colorEstado = Color(0xFF10B981) // Verde éxito
+                        concepto = "Servicio de agua potable",
+                        monto = "$38,450",
+                        fecha = "12 Sep, 2025"
                     )
                 }
 
                 item {
-                    ItemHistorialCard(
-                        titulo = "Inmobiliaria del Parque",
-                        concepto = "Arriendo Mes Anterior",
-                        monto = "$125,000 CLP",
-                        fecha = "Pagado el 15 Sep",
-                        estado = "Pagado",
-                        colorEstado = Color(0xFF10B981)
+                    ItemHistorialPrototipo(
+                        titulo = "Mundo Pacífico",
+                        concepto = "Internet hogar",
+                        monto = "$26,990",
+                        fecha = "28 Ago, 2025"
                     )
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(30.dp))
+                    ItemHistorialPrototipo(
+                        titulo = "Enel Distribución",
+                        concepto = "Electricidad residencial",
+                        monto = "$42,890",
+                        fecha = "05 Ago, 2025"
+                    )
+                }
+
+                // Tarjeta inferior de racha en historial
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = VerdeAccento)
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("📈", fontSize = 22.sp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("4 meses pagando a tiempo", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = FondoAzul)
+                                Text("Tu historial confirma que mantienes una buena racha.", fontSize = 12.sp, color = FondoAzul.copy(alpha = 0.8f))
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
     }
 }
-
 @Composable
-fun ItemHistorialCard(
+fun ItemHistorialPrototipo(
     titulo: String,
     concepto: String,
     monto: String,
-    fecha: String,
-    estado: String,
-    colorEstado: Color
+    fecha: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f) // Ocupa el espacio disponible para evitar cortes
             ) {
-                Text(text = titulo, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
-
-                // Etiqueta de estado de pago
                 Box(
                     modifier = Modifier
-                        .background(colorEstado.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .size(42.dp)
+                        .background(FondoAzul, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = estado, color = colorEstado, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("🏢", fontSize = 18.sp)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = titulo, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextoOscuro, maxLines = 1)
+                    Text(text = concepto, fontSize = 11.sp, color = GrisClaroTexto, maxLines = 1)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(text = fecha, fontSize = 10.sp, color = GrisClaroTexto.copy(alpha = 0.8f))
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = concepto, fontSize = 13.sp, color = GrisClaroTexto)
+            Spacer(modifier = Modifier.width(8.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = Color(0xFFF1F5F9))
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = fecha, fontSize = 12.sp, color = GrisClaroTexto)
-                Text(text = monto, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+            // Columna derecha con ancho adecuado para que no se baje el texto
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = monto,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = TextoOscuro,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .background(Color(0xFF10B981).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text("✓", fontSize = 10.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(text = "Pagado", fontSize = 10.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
