@@ -9,14 +9,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class FormularioViewModel: ViewModel(){
-    // variable de estado " State privado y mutable"
+
     private val _uiState = MutableStateFlow(FormularioUiState())
-    // Publica de solo lectura
+
     val uiState: StateFlow<FormularioUiState> = _uiState.asStateFlow()
 
     private val regexCorreo = Regex("^[A-Za-z0-9._]+@[A-Za-z]+\\.[A-Za-z]{2,3}$")
 
-    //eventos de los campos
+
     fun onNombreCambia(valor: String){
         _uiState.update { it.copy(nombre = valor,errorNombre = null, registroExitoso = false) }
     }
@@ -44,7 +44,7 @@ class FormularioViewModel: ViewModel(){
     fun onTerminosCambia(valor: Boolean){
         _uiState.update { it.copy(aceptaTerminos = valor, errorTerminos = null) }
     }
-    //funciones para validar
+
     private fun validarNombre(nombre: String): String? = when {
         nombre.isBlank() -> "El nombre es obligatorio"
         nombre.trim().length < 3 -> "El nombre debe tener al menos 3 caracteres"

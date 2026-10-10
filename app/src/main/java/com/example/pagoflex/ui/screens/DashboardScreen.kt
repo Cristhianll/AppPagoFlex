@@ -7,7 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.* // <--- Asegúrate de tener esto importado
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,11 +28,11 @@ fun DashboardScreen(
     onIrADetallePago: () -> Unit,
     onIrAPagos: () -> Unit,
     onIrAHistorial: () -> Unit,
-    onAbrirPerfil: () -> Unit
+    onSeleccionarOpcionPerfil: (String) -> Unit
 ) {
     val scrollState = rememberScrollState()
 
-    // Estado para controlar si el mini menú del perfil está abierto o cerrado
+
     var menuExpandido by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -102,7 +102,7 @@ fun DashboardScreen(
                     )
                 }
 
-                // Contenedor Box para posicionar el Botón y su Mini Menú Desplegable
+
                 Box {
                     IconButton(onClick = { menuExpandido = true }) {
                         Box(
@@ -120,7 +120,7 @@ fun DashboardScreen(
                         }
                     }
 
-                    // --- MINI MENÚ DESPLEGABLE DE CONFIGURACIÓN Y PERFIL ---
+
                     DropdownMenu(
                         expanded = menuExpandido,
                         onDismissRequest = { menuExpandido = false },
@@ -130,21 +130,21 @@ fun DashboardScreen(
                             text = { Text("👤 Mi Cuenta y Datos", fontWeight = FontWeight.Bold, color = DashTextoPrincipal) },
                             onClick = {
                                 menuExpandido = false
-                                onAbrirPerfil() // Abre la vista detallada de perfil si lo deseas
+                                onSeleccionarOpcionPerfil("cuenta")
                             }
                         )
                         DropdownMenuItem(
                             text = { Text("💳 Mis Tarjetas", color = DashTextoPrincipal) },
                             onClick = {
                                 menuExpandido = false
-                                onAbrirPerfil()
+                                onSeleccionarOpcionPerfil("tarjetas")
                             }
                         )
                         DropdownMenuItem(
                             text = { Text("⚙️ Configuración", color = DashTextoPrincipal) },
                             onClick = {
                                 menuExpandido = false
-                                onAbrirPerfil()
+                                onSeleccionarOpcionPerfil("configuracion")
                             }
                         )
                         HorizontalDivider()
@@ -152,7 +152,7 @@ fun DashboardScreen(
                             text = { Text("🚪 Cerrar Sesión", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) },
                             onClick = {
                                 menuExpandido = false
-                                onAbrirPerfil() // O puedes manejar el cierre de sesión directo aquí
+                                onSeleccionarOpcionPerfil("salir")
                             }
                         )
                     }

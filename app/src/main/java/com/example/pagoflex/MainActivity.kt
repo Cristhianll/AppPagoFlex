@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.*
 import com.example.pagoflex.ui.screens.DashboardScreen
 import com.example.pagoflex.ui.screens.DetallePagoScreen
+import com.example.pagoflex.ui.screens.DetallePerfilScreen
 import com.example.pagoflex.ui.screens.FormularioScreen
 import com.example.pagoflex.ui.screens.HistorialScreen
 import com.example.pagoflex.ui.screens.PagoExitosoScreen
@@ -22,18 +23,29 @@ class MainActivity : ComponentActivity() {
             PagoFlexTheme {
                 val uiState by viewModel.uiState.collectAsState()
 
-
                 var pantallaActual by remember { mutableStateOf("inicio") }
-                var verPerfil by remember{mutableStateOf(false)}
+                var seccionPerfilActual by remember { mutableStateOf("cuenta") }
+                var verPerfilDetalle by remember { mutableStateOf(false) }
+
                 if (!uiState.registroExitoso) {
                     FormularioScreen(viewModel = viewModel)
+                } else if (verPerfilDetalle) {
+                    DetallePerfilScreen(
+                        nombreUsuario = uiState.nombre,
+                        seccionInicial = seccionPerfilActual,
+                        onVolver = { verPerfilDetalle = false },
+                        onCerrarSesion = {
+                            verPerfilDetalle = false
+                            viewModel.onLimpiar()
+                        }
+                    )
                 } else {
                     when (pantallaActual) {
                         "detallePago" -> {
                             DetallePagoScreen(
                                 onVolverAtras = { pantallaActual = "inicio" },
                                 onConfirmarPago = {
-                                    pantallaActual = "pagoExitoso" // Al confirmar, va a la pantalla de éxito
+                                    pantallaActual = "pagoExitoso"
                                 }
                             )
                         }
@@ -61,8 +73,14 @@ class MainActivity : ComponentActivity() {
                                 onIrAHistorial = {
                                     pantallaActual = "historial"
                                 },
-                                onAbrirPerfil = {
-                                    verPerfil = true
+                                onSeleccionarOpcionPerfil = { opcion ->
+                                    // Recibe la opción seleccionada del mini menú ("cuenta", "tarjetas", "configuracion", "salir")
+                                    if (opcion == "salir") {
+                                        viewModel.onLimpiar()
+                                    } else {
+                                        seccionPerfilActual = opcion
+                                        verPerfilDetalle = true
+                                    }
                                 }
                             )
                         }
