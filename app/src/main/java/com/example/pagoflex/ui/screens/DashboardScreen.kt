@@ -26,7 +26,10 @@ private val DashFondoBlanca = Color(0xFFF8FAFC)
 fun DashboardScreen(
     nombreUsuario: String,
     onVolverAlLogin: () -> Unit,
-    onIrADetallePago: () -> Unit
+    onIrADetallePago: () -> Unit,
+    onIrAPagos: () -> Unit,
+    onIrHistorial:() -> Unit
+
 ) {
     val scrollState = rememberScrollState()
 
@@ -46,13 +49,17 @@ fun DashboardScreen(
                     icon = { Text("📄", fontSize = 20.sp) },
                     label = { Text("Pagos") },
                     selected = false,
-                    onClick = { }
+                    onClick = {
+                        onIrAPagos()
+                    }
                 )
                 NavigationBarItem(
                     icon = { Text("🕒", fontSize = 20.sp) },
                     label = { Text("Historial") },
                     selected = false,
-                    onClick = { }
+                    onClick = {
+                        onIrHistorial()
+                    }
                 )
             }
         }

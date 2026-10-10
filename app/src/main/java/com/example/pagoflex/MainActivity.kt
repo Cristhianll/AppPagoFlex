@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import com.example.pagoflex.ui.screens.DashboardScreen
 import com.example.pagoflex.ui.screens.DetallePagoScreen
 import com.example.pagoflex.ui.screens.FormularioScreen
+import com.example.pagoflex.ui.screens.HistorialScreen
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.FormularioViewModel
 
@@ -20,33 +21,45 @@ class MainActivity : ComponentActivity() {
             PagoFlexTheme {
                 val uiState by viewModel.uiState.collectAsState()
 
-                // Declaramos el estado para alternar entre el Dashboard y el Detalle de Pago
-                var verDetallePago by remember { mutableStateOf(false) }
+                // Variable de control de navegación: "inicio", "detallePago", "historial"
+                var pantallaActual by remember { mutableStateOf("inicio") }
 
                 if (!uiState.registroExitoso) {
-                    // Muestra el formulario si aún no se ha registrado
                     FormularioScreen(viewModel = viewModel)
-                } else if (verDetallePago) {
-                    // Muestra la pantalla de Detalle de Pago al presionar "Pagar ahora"
-                    DetallePagoScreen(
-                        onVolverAtras = { verDetallePago = false },
-                        onConfirmarPago = {
-                            // Al confirmar el pago, volvemos al dashboard
-                            verDetallePago = false
-                        }
-                    )
                 } else {
-                    // Muestra el Dashboard principal
-                    DashboardScreen(
-                        nombreUsuario = uiState.nombre,
-                        onVolverAlLogin = {
-                            verDetallePago = false
-                            viewModel.onLimpiar()
-                        },
-                        onIrADetallePago = {
-                            verDetallePago = true
+                    when (pantallaActual) {
+                        "detallePago" -> {
+                            DetallePagoScreen(
+                                onVolverAtras = { pantallaActual = "inicio" },
+                                onConfirmarPago = { pantallaActual = "inicio" }
+                            )
                         }
-                    )
+                        "historial" -> {
+                            HistorialScreen(
+                                onVolverInicio = { pantallaActual = "inicio" },
+                                onIrAPagos = { pantallaActual = "detallePago" }
+                            )
+                        }
+                        else -> {
+                            DashboardScreen(
+                                nombreUsuario = uiState.nombre,
+                                onVolverAlLogin = {
+                                    pantallaActual = "inicio"
+                                    viewModel.onLimpiar()
+                                },
+                                onIrADetallePago = {
+                                    pantallaActual = "detallePago"
+                                }, {
+                                    pantallaActual = "detallePago"
+                                },
+                                onIrHistorial = {
+                                    pantallaActual = "historial"
+                                }
+                            )
+
+
+                        }
+                    }
                 }
             }
         }
