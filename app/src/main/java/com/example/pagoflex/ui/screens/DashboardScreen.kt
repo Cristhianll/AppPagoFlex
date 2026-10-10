@@ -7,14 +7,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.* // <--- Asegúrate de tener esto importado
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 
 private val DashAzulFondo = Color(0xFF001F3F)
 private val DashVerdeAccento = Color(0xFFD4ED91)
@@ -32,6 +31,9 @@ fun DashboardScreen(
     onAbrirPerfil: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+
+    // Estado para controlar si el mini menú del perfil está abierto o cerrado
+    var menuExpandido by remember { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = {
@@ -70,7 +72,7 @@ fun DashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-          //creacion logo user
+            // --- CABECERA CON LOGO Y BOTÓN DE PERFIL CON MENÚ DESPLEGABLE ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -100,19 +102,58 @@ fun DashboardScreen(
                     )
                 }
 
-                // Botón circular con la inicial del usuario que abre el perfil y configuración
-                IconButton(onClick = onAbrirPerfil) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(DashVerdeAccento, CircleShape),
-                        contentAlignment = Alignment.Center
+                // Contenedor Box para posicionar el Botón y su Mini Menú Desplegable
+                Box {
+                    IconButton(onClick = { menuExpandido = true }) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(DashVerdeAccento, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (nombreUsuario.isNotBlank()) nombreUsuario.take(1).uppercase() else "M",
+                                color = DashAzulFondo,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+
+                    // --- MINI MENÚ DESPLEGABLE DE CONFIGURACIÓN Y PERFIL ---
+                    DropdownMenu(
+                        expanded = menuExpandido,
+                        onDismissRequest = { menuExpandido = false },
+                        modifier = Modifier.background(Color.White)
                     ) {
-                        Text(
-                            text = if (nombreUsuario.isNotBlank()) nombreUsuario.take(1).uppercase() else "M",
-                            color = DashAzulFondo,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                        DropdownMenuItem(
+                            text = { Text("👤 Mi Cuenta y Datos", fontWeight = FontWeight.Bold, color = DashTextoPrincipal) },
+                            onClick = {
+                                menuExpandido = false
+                                onAbrirPerfil() // Abre la vista detallada de perfil si lo deseas
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("💳 Mis Tarjetas", color = DashTextoPrincipal) },
+                            onClick = {
+                                menuExpandido = false
+                                onAbrirPerfil()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("⚙️ Configuración", color = DashTextoPrincipal) },
+                            onClick = {
+                                menuExpandido = false
+                                onAbrirPerfil()
+                            }
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("🚪 Cerrar Sesión", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) },
+                            onClick = {
+                                menuExpandido = false
+                                onAbrirPerfil() // O puedes manejar el cierre de sesión directo aquí
+                            }
                         )
                     }
                 }
@@ -120,7 +161,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-
+            // --- SALUDO ---
             Text(
                 text = "BUENOS DÍAS",
                 color = DashVerdeAccento,
@@ -144,7 +185,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-
+            // --- TARJETA DE PRÓXIMO VENCIMIENTO ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
@@ -231,7 +272,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-
+            // --- TARJETA DE RACHA DE PAGOS ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
