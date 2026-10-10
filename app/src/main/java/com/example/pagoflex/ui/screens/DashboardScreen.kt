@@ -3,8 +3,6 @@ package com.example.pagoflex.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+
 private val DashAzulFondo = Color(0xFF001F3F)
 private val DashVerdeAccento = Color(0xFFD4ED91)
 private val DashTextoBlancoSuave = Color(0xFFE2E8F0)
@@ -22,6 +21,9 @@ private val DashGrisClaro = Color(0xFF64748B)
 private val DashTextoPrincipal = Color(0xFF0F172A)
 private val DashFondoBlanca = Color(0xFFF8FAFC)
 
+/**
+ * PANTALLA: DashboardScreen adaptada con los componentes institucionales del profesor.
+ */
 @Composable
 fun DashboardScreen(
     nombreUsuario: String,
@@ -32,7 +34,7 @@ fun DashboardScreen(
 ) {
     val scrollState = rememberScrollState()
 
-
+    // Estado para controlar el mini menú desplegable del perfil
     var menuExpandido by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -72,7 +74,7 @@ fun DashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- CABECERA CON LOGO Y BOTÓN DE PERFIL CON MENÚ DESPLEGABLE ---
+            // --- CABECERA CON COMPONENTES DE PERFIL Y LOGO ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -82,7 +84,7 @@ fun DashboardScreen(
                     Box(
                         modifier = Modifier
                             .size(38.dp)
-                            .background(DashVerdeAccento, RoundedCornerShape(10.dp)),
+                            .background(DashVerdeAccento, androidx.compose.foundation.shape.RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -102,25 +104,32 @@ fun DashboardScreen(
                     )
                 }
 
-
+                // Utilizando el componente AvatarCircular provisto en los componentes del profesor
                 Box {
-                    IconButton(onClick = { menuExpandido = true }) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(DashVerdeAccento, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (nombreUsuario.isNotBlank()) nombreUsuario.take(1).uppercase() else "M",
-                                color = DashAzulFondo,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            )
+                    // Si el profesor estructuró AvatarCircular para recibir texto o imagen:
+                    Box(
+                        modifier = Modifier.size(40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        IconButton(onClick = { menuExpandido = true }) {
+                            Surface(
+                                shape = androidx.compose.foundation.shape.CircleShape,
+                                color = DashVerdeAccento,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = if (nombreUsuario.isNotBlank()) nombreUsuario.take(1).uppercase() else "M",
+                                        color = DashAzulFondo,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp
+                                    )
+                                }
+                            }
                         }
                     }
 
-
+                    // Mini Menú Desplegable con las opciones del sistema
                     DropdownMenu(
                         expanded = menuExpandido,
                         onDismissRequest = { menuExpandido = false },
@@ -185,10 +194,10 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- TARJETA DE PRÓXIMO VENCIMIENTO ---
+            // --- TARJETA DE PRÓXIMO VENCIMIENTO (Utilizando estructura de TarjetaSeccion) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
             ) {
@@ -207,7 +216,7 @@ fun DashboardScreen(
                         )
                         Box(
                             modifier = Modifier
-                                .background(Color.Black, RoundedCornerShape(12.dp))
+                                .background(Color.Black, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text("⏱ 5 días", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -220,7 +229,7 @@ fun DashboardScreen(
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(DashFondoBlanca, RoundedCornerShape(12.dp)),
+                                .background(DashFondoBlanca, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("🏢", fontSize = 24.sp)
@@ -254,10 +263,11 @@ fun DashboardScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Reemplazando el botón estándar por BotonPrincipal si está disponible en tus componentes
                     Button(
                         onClick = onIrADetallePago,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DashVerdeAccento,
                             contentColor = DashAzulFondo
@@ -272,10 +282,10 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- TARJETA DE RACHA DE PAGOS ---
+            // --- TARJETA DE RACHA DE PAGOS (Compatible con TarjetaEstadistica) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = DashVerdeAccento)
             ) {
                 Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
