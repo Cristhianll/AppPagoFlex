@@ -1,14 +1,12 @@
 package com.example.pagoflex.ui.screens
 
-
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,12 +27,11 @@ fun DetallePagoScreen(
     onVolverAtras: () -> Unit,
     onConfirmarPago: () -> Unit
 ) {
-    var metodoSeleccionado by remember { mutableStateOf(1) } // 1: Tarjeta de Crédito, 2: Cuenta Corriente
     val scrollState = rememberScrollState()
 
     Scaffold(
         bottomBar = {
-            // Barra inferior fija con el botón de confirmación de pago
+            // Barra inferior fija con el botón de confirmación de pago.
             Surface(
                 color = Color.White,
                 tonalElevation = 12.dp,
@@ -46,9 +43,15 @@ fun DetallePagoScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("🔒 Pago protegido y encriptado", fontSize = 12.sp, color = ColorGrisTexto)
+                        Text(
+                            text = "🔒 Pago protegido y encriptado",
+                            fontSize = 12.sp,
+                            color = ColorGrisTexto
+                        )
                     }
+
                     Spacer(modifier = Modifier.height(12.dp))
+
                     Button(
                         onClick = onConfirmarPago,
                         modifier = Modifier
@@ -60,9 +63,17 @@ fun DetallePagoScreen(
                             contentColor = AzulOscuroTexto
                         )
                     ) {
-                        Text("Confirmar pago · $125,000", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Confirmar pago · $125,000",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(modifier = Modifier.weight(1f))
-                        Text("➔", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "➔",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -76,15 +87,22 @@ fun DetallePagoScreen(
                 .verticalScroll(scrollState)
                 .padding(20.dp)
         ) {
-            // --- CABECERA CON FLECHA ATRÁS Y TÍTULO ---
+            // Cabecera con flecha atrás y título.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onVolverAtras) {
-                    Text("‹", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = ColorTextoOscuro)
+                    Text(
+                        text = "‹",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorTextoOscuro
+                    )
                 }
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
                     text = "Detalle de pago",
                     fontSize = 20.sp,
@@ -95,12 +113,16 @@ fun DetallePagoScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // --- TARJETA SUPERIOR DE INSTITUCIÓN Y MONTO ---
+            // Tarjeta superior de institución y monto.
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = ColorTarjetaBlanca),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                colors = CardDefaults.cardColors(
+                    containerColor = ColorTarjetaBlanca
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp
+                )
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -109,55 +131,107 @@ fun DetallePagoScreen(
                     Box(
                         modifier = Modifier
                             .size(50.dp)
-                            .background(ColorTextoOscuro, RoundedCornerShape(14.dp)),
+                            .background(
+                                ColorTextoOscuro,
+                                RoundedCornerShape(14.dp)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text("🏢", fontSize = 24.sp)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "PAGAR A", fontSize = 11.sp, color = ColorGrisTexto, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+
+                    Text(
+                        text = "PAGAR A",
+                        fontSize = 11.sp,
+                        color = ColorGrisTexto,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text(text = "Enel Distribución", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = ColorTextoOscuro)
+
+                    Text(
+                        text = "Enel Distribución",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorTextoOscuro
+                    )
 
                     Spacer(modifier = Modifier.height(20.dp))
                     HorizontalDivider(color = FondoPantallaClaro)
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Emisor
+                    // Emisor.
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Emisor", color = ColorGrisTexto, fontSize = 14.sp)
-                        Text("Enel Distribución", color = ColorTextoOscuro, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            text = "Emisor",
+                            color = ColorGrisTexto,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Enel Distribución",
+                            color = ColorTextoOscuro,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    // Concepto
+
+                    // Concepto.
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Concepto", color = ColorGrisTexto, fontSize = 14.sp)
-                        Text("Cuenta de Agua - Consumo Mensual", color = ColorTextoOscuro, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            text = "Concepto",
+                            color = ColorGrisTexto,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Cuenta de Agua - Consumo Mensual",
+                            color = ColorTextoOscuro,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
                     HorizontalDivider(color = FondoPantallaClaro)
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Monto Total
+                    // Monto total.
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Monto total", color = ColorGrisTexto, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            text = "Monto total",
+                            color = ColorGrisTexto,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("$125,000", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = ColorTextoOscuro)
+                            Text(
+                                text = "$125,000",
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ColorTextoOscuro
+                            )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("CLP", fontSize = 12.sp, color = ColorGrisTexto, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "CLP",
+                                fontSize = 12.sp,
+                                color = ColorGrisTexto,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -165,7 +239,7 @@ fun DetallePagoScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- SECCIÓN MEDIO DE PAGO ---
+            // MODIFICADO: la sección presenta un solo método; ya no pide seleccionar.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -178,7 +252,7 @@ fun DetallePagoScreen(
                     color = ColorTextoOscuro
                 )
                 Text(
-                    text = "Selecciona uno",
+                    text = "Método registrado",
                     fontSize = 12.sp,
                     color = ColorGrisTexto
                 )
@@ -186,114 +260,53 @@ fun DetallePagoScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Opción 1: Tarjeta de Crédito
+            // MODIFICADO: Visa como único método; se quitó Cuenta Corriente.
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { metodoSeleccionado = 1 },
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (metodoSeleccionado == 1) ColorTextoOscuro else ColorTarjetaBlanca
-                ),
-                border = if (metodoSeleccionado == 1) null else androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
+                    containerColor = ColorTextoOscuro
+                )
             ) {
                 Row(
-                    modifier = Modifier.padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    if (metodoSeleccionado == 1) Color.White.copy(alpha = 0.15f) else FondoPantallaClaro,
-                                    RoundedCornerShape(10.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("💳", fontSize = 20.sp)
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column {
-                            Text(
-                                "Tarjeta de Crédito",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = if (metodoSeleccionado == 1) Color.White else ColorTextoOscuro
-                            )
-                            Text(
-                                "•••• 4582 • Visa",
-                                fontSize = 12.sp,
-                                color = if (metodoSeleccionado == 1) Color.White.copy(alpha = 0.7f) else ColorGrisTexto
-                            )
-                        }
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                Color.White.copy(alpha = 0.15f),
+                                RoundedCornerShape(10.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("💳", fontSize = 20.sp)
                     }
 
-                    RadioButton(
-                        selected = metodoSeleccionado == 1,
-                        onClick = { metodoSeleccionado = 1 },
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = VerdeBotonPago,
-                            unselectedColor = ColorGrisTexto
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Tarjeta de Crédito",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color.White
                         )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Opción 2: Cuenta Corriente
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { metodoSeleccionado = 2 },
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (metodoSeleccionado == 2) ColorTextoOscuro else ColorTarjetaBlanca
-                ),
-                border = if (metodoSeleccionado == 2) null else androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
-            ) {
-                Row(
-                    modifier = Modifier.padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    if (metodoSeleccionado == 2) Color.White.copy(alpha = 0.15f) else FondoPantallaClaro,
-                                    RoundedCornerShape(10.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("🏦", fontSize = 20.sp)
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column {
-                            Text(
-                                "Cuenta Corriente",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = if (metodoSeleccionado == 2) Color.White else ColorTextoOscuro
-                            )
-                            Text(
-                                "Banco PagoFlex •• 9012",
-                                fontSize = 12.sp,
-                                color = if (metodoSeleccionado == 2) Color.White.copy(alpha = 0.7f) else ColorGrisTexto
-                            )
-                        }
+                        Text(
+                            text = "•••• 4582 • Visa",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
                     }
 
-                    RadioButton(
-                        selected = metodoSeleccionado == 2,
-                        onClick = { metodoSeleccionado = 2 },
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = VerdeBotonPago,
-                            unselectedColor = ColorGrisTexto
-                        )
+                    Text(
+                        text = "Principal",
+                        fontSize = 11.sp,
+                        color = VerdeBotonPago,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

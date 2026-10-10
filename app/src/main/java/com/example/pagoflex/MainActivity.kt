@@ -13,15 +13,18 @@ import com.example.pagoflex.ui.screens.HistorialScreen
 import com.example.pagoflex.ui.screens.PagoExitosoScreen
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.FormularioViewModel
+import com.example.pagoflex.viewmodel.PagoViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: FormularioViewModel by viewModels()
+    private val pagoViewModel: PagoViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             PagoFlexTheme {
                 val uiState by viewModel.uiState.collectAsState()
+                val pagoUiState by pagoViewModel.uiState.collectAsState()
 
                 var pantallaActual by remember { mutableStateOf("inicio") }
                 var seccionPerfilActual by remember { mutableStateOf("cuenta") }
@@ -32,6 +35,9 @@ class MainActivity : ComponentActivity() {
                 } else if (verPerfilDetalle) {
                     DetallePerfilScreen(
                         nombreUsuario = uiState.nombre,
+                        correoUsuario = uiState.correo,
+                        ultimosDigitosVisa = pagoUiState.ultimosDigitosVisa,
+                        tarjetaPrincipal = pagoUiState.tarjetaPrincipal,
                         seccionInicial = seccionPerfilActual,
                         onVolver = { verPerfilDetalle = false },
                         onCerrarSesion = {
@@ -45,6 +51,7 @@ class MainActivity : ComponentActivity() {
                             DetallePagoScreen(
                                 onVolverAtras = { pantallaActual = "inicio" },
                                 onConfirmarPago = {
+                                    pagoViewModel.confirmarPago()
                                     pantallaActual = "pagoExitoso"
                                 }
                             )
@@ -64,6 +71,7 @@ class MainActivity : ComponentActivity() {
                         else -> {
                             DashboardScreen(
                                 nombreUsuario = uiState.nombre,
+                                deudaPendiente = pagoUiState.deudaPendiente,
                                 onIrADetallePago = {
                                     pantallaActual = "detallePago"
                                 },

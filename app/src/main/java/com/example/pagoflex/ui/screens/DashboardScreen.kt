@@ -27,6 +27,7 @@ private val DashFondoBlanca = Color(0xFFF8FAFC)
 @Composable
 fun DashboardScreen(
     nombreUsuario: String,
+    deudaPendiente: Boolean,
     onIrADetallePago: () -> Unit,
     onIrAPagos: () -> Unit,
     onIrAHistorial: () -> Unit,
@@ -195,87 +196,115 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // --- TARJETA DE PRÓXIMO VENCIMIENTO (Utilizando estructura de TarjetaSeccion) ---
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
-            ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+            if(deudaPendiente) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "PRÓXIMO VENCIMIENTO",
+                                color = DashGrisClaro,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        Color.Black,
+                                        androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    " 5 días",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        DashFondoBlanca,
+                                        androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("🏢", fontSize = 24.sp)
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    "Inmobiliaria del Parque",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = DashTextoPrincipal
+                                )
+                                Text("📅 Vence 15 Oct", color = DashGrisClaro, fontSize = 14.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+                        HorizontalDivider(color = DashFondoBlanca)
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Text(
-                            text = "PRÓXIMO VENCIMIENTO",
+                            text = "MONTO A PAGAR",
                             color = DashGrisClaro,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
                         )
-                        Box(
-                            modifier = Modifier
-                                .background(Color.Black, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("⏱ 5 días", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "$125,000",
+                                fontSize = 34.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DashTextoPrincipal
+                            )
+                            Text(
+                                "CLP",
+                                color = DashGrisClaro,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(DashFondoBlanca, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center
+                        // Reemplazando el botón estándar por BotonPrincipal si está disponible en tus componentes
+                        Button(
+                            onClick = onIrADetallePago,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DashVerdeAccento,
+                                contentColor = DashAzulFondo
+                            )
                         ) {
-                            Text("🏢", fontSize = 24.sp)
+                            Text("Pagar ahora", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text("➔", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("Inmobiliaria del Parque", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DashTextoPrincipal)
-                            Text("📅 Vence 15 Oct", color = DashGrisClaro, fontSize = 14.sp)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-                    HorizontalDivider(color = DashFondoBlanca)
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "MONTO A PAGAR",
-                        color = DashGrisClaro,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("$125,000", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = DashTextoPrincipal)
-                        Text("CLP", color = DashGrisClaro, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Reemplazando el botón estándar por BotonPrincipal si está disponible en tus componentes
-                    Button(
-                        onClick = onIrADetallePago,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DashVerdeAccento,
-                            contentColor = DashAzulFondo
-                        )
-                    ) {
-                        Text("Pagar ahora", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text("➔", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

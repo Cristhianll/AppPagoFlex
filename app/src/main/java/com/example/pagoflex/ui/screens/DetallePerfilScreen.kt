@@ -26,6 +26,9 @@ private val GrisTexto = Color(0xFF64748B)
 @Composable
 fun DetallePerfilScreen(
     nombreUsuario: String,
+    correoUsuario: String,
+    ultimosDigitosVisa: String,
+    tarjetaPrincipal: Boolean,
     seccionInicial: String = "cuenta", // "cuenta", "tarjetas", "configuracion"
     onVolver: () -> Unit,
     onCerrarSesion: () -> Unit
@@ -111,8 +114,11 @@ fun DetallePerfilScreen(
 
             // Contenido dinámico según la pestaña seleccionada
             when (pestanaSeleccionada) {
-                "cuenta" -> ContenidoMiCuenta(nombre = nombreUsuario)
-                "tarjetas" -> ContenidoMisTarjetas()
+                "cuenta" -> ContenidoMiCuenta(nombre = nombreUsuario,correo = correoUsuario)
+                "tarjetas" -> ContenidoMisTarjetas(
+                    ultimosDigitosVisa = ultimosDigitosVisa,
+                    tarjetaPrincipal = tarjetaPrincipal
+                )
                 "configuracion" -> ContenidoConfiguracion(onCerrarSesion = onCerrarSesion)
             }
         }
@@ -135,21 +141,29 @@ fun BotonPestanaPerfil(titulo: String, seleccionado: Boolean, onClick: () -> Uni
 }
 
 @Composable
-fun ContenidoMiCuenta(nombre: String) {
+fun ContenidoMiCuenta(nombre: String, correo: String) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("INFORMACIÓN PERSONAL", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GrisTexto)
 
-        CardItemPerfil("Nombre completo", if (nombre.isBlank()) "Martina Soto" else nombre)
-        CardItemPerfil("Correo electrónico", "martina.cliente@pagoflex.cl")
-        CardItemPerfil("Teléfono de contacto", "+56 9 8765 4321")
+        CardItemPerfil("Nombre completo", nombre.ifBlank { "sin Nombre" })
+        CardItemPerfil("Correo electrónico", correo.ifBlank { "sin Correo" })
         CardItemPerfil("Estado de cuenta", "Activa / Verificada ✓")
     }
 }
 
+// Muestra los datos de las tarjetas
 @Composable
-fun ContenidoMisTarjetas() {
+fun ContenidoMisTarjetas(
+    ultimosDigitosVisa: String,
+    tarjetaPrincipal: Boolean
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("MÉTODOS DE PAGO REGISTRADOS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GrisTexto)
+        Text(
+            "MÉTODOS DE PAGO REGISTRADOS",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = GrisTexto
+        )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -161,19 +175,31 @@ fun ContenidoMisTarjetas() {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("VISA Débito/Crédito", color = VerdeAccento, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("Principal", color = Color.White, fontSize = 10.sp)
+                    Text(
+                        "VISA Débito/Crédito",
+                        color = VerdeAccento,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+
+                    if (tarjetaPrincipal) {
+                        Text(
+                            "Principal",
+                            color = Color.White,
+                            fontSize = 10.sp
+                        )
+                    }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("•••• •••• •••• 4582", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Titular: Martina Soto", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
-                    Text("Exp: 08/28", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
-                }
+
+                Text(
+                    "•••• •••• •••• $ultimosDigitosVisa",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                )
             }
         }
 
@@ -181,7 +207,10 @@ fun ContenidoMisTarjetas() {
             onClick = { /* Acción para añadir tarjeta */ },
             modifier = Modifier.fillMaxWidth().height(46.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = VerdeAccento, contentColor = AzulFondo)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VerdeAccento,
+                contentColor = AzulFondo
+            )
         ) {
             Text("+ Vincular nueva tarjeta", fontWeight = FontWeight.Bold)
         }
