@@ -228,6 +228,7 @@ fun ItemHistorialPrototipo(
     titulo: String,
     concepto: String,
     monto: String,
+    
     fecha: String
 ) {
     Card(
