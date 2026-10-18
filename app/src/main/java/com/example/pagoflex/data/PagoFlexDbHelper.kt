@@ -10,53 +10,68 @@ import java.security.MessageDigest
 class PagoFlexDbHelper(context: Context) :
     SQLiteOpenHelper(context, "pagoflex.db", null, 1) {
 
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        db.setForeignKeyConstraintsEnabled(true)
+    }
+
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nombre TEXT NOT NULL,
                 correo TEXT NOT NULL UNIQUE,
                 clave_hash TEXT NOT NULL,
-                rol TEXT NOT NULL CHECK(rol IN ('ADMIN', 'USUARIO'))
+                rol TEXT NOT NULL CHECK(rol IN ('ADMIN','USUARIO'))
             )
-        """.trimIndent())
+            """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE deudas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 usuario_id INTEGER NOT NULL,
                 concepto TEXT NOT NULL,
                 empresa TEXT NOT NULL,
-                monto REAL NOT NULL CHECK(monto > 0),
+                monto REAL NOT NULL,
                 vencimiento TEXT NOT NULL,
                 estado TEXT NOT NULL DEFAULT 'PENDIENTE',
-                creada_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
-        """.trimIndent())
+            """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE pagos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 deuda_id INTEGER NOT NULL,
                 monto REAL NOT NULL,
                 fecha TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                comprobante TEXT NOT NULL,
                 FOREIGN KEY(deuda_id) REFERENCES deudas(id)
             )
-        """.trimIndent())
-
-        insertarUsuario(
-            db, "Administrador Demo",
-            "admin@pagoflex.cl", "Admin123$", "ADMIN"
-        )
-        insertarUsuario(
-            db, "Usuario Demo",
-            "emilia@pagoflex.cl", "Emilia123$", "USUARIO"
+            """.trimIndent()
         )
 
-        // Deuda ficticia inicial para probar el panel del usuario.
-        val deuda = ContentValues().apply {
+        insertarUsuario(
+            db,
+            "Administrador Demo",
+            "admin@pagoflex.cl",
+            "Admin123$",
+            "ADMIN"
+        )
+
+        insertarUsuario(
+            db,
+            "Emilia Demo",
+            "emilia@pagoflex.cl",
+            "Emilia123$",
+            "USUARIO"
+        )
+
+        val deudaInicial = ContentValues().apply {
             put("usuario_id", 2)
             put("concepto", "Cuenta de electricidad")
             put("empresa", "Empresa Demo")
@@ -64,7 +79,16 @@ class PagoFlexDbHelper(context: Context) :
             put("vencimiento", "2026-11-30")
             put("estado", "PENDIENTE")
         }
-        db.insert("deudas", null, deuda)
+
+        db.insert("deudas", null, deudaInicial)
+    }
+
+    override fun onUpgrade(
+        db: SQLiteDatabase,
+        oldVersion: Int,
+        newVersion: Int
+    ) {
+        // Agregar migraciones aquí si se modifica la estructura de la BD.
     }
 
     private fun insertarUsuario(
@@ -74,47 +98,38 @@ class PagoFlexDbHelper(context: Context) :
         clave: String,
         rol: String
     ) {
-        val values = ContentValues().apply {
+        val valores = ContentValues().apply {
             put("nombre", nombre)
-            put("correo", correo.lowercase())
+            put("correo", correo.trim().lowercase())
             put("clave_hash", hash(clave))
             put("rol", rol)
         }
-        db.insertOrThrow("usuarios", null, values)
+
+        db.insert("usuarios", null, valores)
     }
 
-    override fun onUpgrade(
-        db: SQLiteDatabase,
-        oldVersion: Int,
-        newVersion: Int
-    ) {
-        // En futuras versiones, agrega migraciones sin borrar los datos.
-    }
-
-    private fun hash(texto: String): String {
-        val bytes = MessageDigest.getInstance("SHA-256")
-            .digest(texto.toByteArray(Charsets.UTF_8))
-        return bytes.joinToString("") { "%02x".format(it) }
-    }
-
-    fun iniciarSesion(correo: String, clave: String): Map<String, String>? {
-        val db = readableDatabase
-        val cursor = db.rawQuery(
+    fun iniciarSesion(
+        correo: String,
+        clave: String
+    ): Map<String, String>? {
+        val sql =
             """
             SELECT id, nombre, correo, rol
             FROM usuarios
             WHERE correo = ? AND clave_hash = ?
-            """.trimIndent(),
-            arrayOf(correo.trim().lowercase(), hash(clave))
-        )
+            """.trimIndent()
 
-        return cursor.use {
-            if (!it.moveToFirst()) return@use null
-            mapOf(
-                "id" to it.getInt(0).toString(),
-                "nombre" to it.getString(1),
-                "correo" to it.getString(2),
-                "rol" to it.getString(3)
+        readableDatabase.rawQuery(
+            sql,
+            arrayOf(correo.trim().lowercase(), hash(clave))
+        ).use { cursor ->
+            if (!cursor.moveToFirst()) return null
+
+            return mapOf(
+                "id" to cursor.getInt(0).toString(),
+                "nombre" to cursor.getString(1),
+                "correo" to cursor.getString(2),
+                "rol" to cursor.getString(3)
             )
         }
     }
@@ -124,36 +139,43 @@ class PagoFlexDbHelper(context: Context) :
         correo: String,
         clave: String
     ): Boolean {
-        return try {
-            val values = ContentValues().apply {
-                put("nombre", nombre.trim())
-                put("correo", correo.trim().lowercase())
-                put("clave_hash", hash(clave))
-                put("rol", "USUARIO")
-            }
-            writableDatabase.insertOrThrow("usuarios", null, values)
-            true
-        } catch (_: Exception) {
-            false
+        val valores = ContentValues().apply {
+            put("nombre", nombre.trim())
+            put("correo", correo.trim().lowercase())
+            put("clave_hash", hash(clave))
+            put("rol", "USUARIO")
         }
+
+        return writableDatabase.insert(
+            "usuarios",
+            null,
+            valores
+        ) != -1L
     }
 
     fun listarUsuarios(): List<Map<String, String>> {
         val resultado = mutableListOf<Map<String, String>>()
+
         readableDatabase.rawQuery(
-            "SELECT id, nombre, correo FROM usuarios WHERE rol = 'USUARIO' ORDER BY nombre",
+            """
+            SELECT id, nombre, correo, rol
+            FROM usuarios
+            ORDER BY nombre
+            """.trimIndent(),
             null
-        ).use { c ->
-            while (c.moveToNext()) {
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
                 resultado.add(
                     mapOf(
-                        "id" to c.getInt(0).toString(),
-                        "nombre" to c.getString(1),
-                        "correo" to c.getString(2)
+                        "id" to cursor.getInt(0).toString(),
+                        "nombre" to cursor.getString(1),
+                        "correo" to cursor.getString(2),
+                        "rol" to cursor.getString(3)
                     )
                 )
             }
         }
+
         return resultado
     }
 
@@ -164,11 +186,7 @@ class PagoFlexDbHelper(context: Context) :
         monto: Double,
         vencimiento: String
     ): Boolean {
-        if (concepto.isBlank() || empresa.isBlank() ||
-            monto <= 0 || vencimiento.isBlank()
-        ) return false
-
-        val values = ContentValues().apply {
+        val valores = ContentValues().apply {
             put("usuario_id", usuarioId)
             put("concepto", concepto.trim())
             put("empresa", empresa.trim())
@@ -176,78 +194,107 @@ class PagoFlexDbHelper(context: Context) :
             put("vencimiento", vencimiento)
             put("estado", "PENDIENTE")
         }
-        return writableDatabase.insert("deudas", null, values) != -1L
+
+        return writableDatabase.insert(
+            "deudas",
+            null,
+            valores
+        ) != -1L
     }
 
-    fun listarDeudas(usuarioId: Int? = null): List<Map<String, String>> {
+    fun listarDeudas(
+        usuarioId: Int? = null
+    ): List<Map<String, String>> {
         val resultado = mutableListOf<Map<String, String>>()
-        val sql = """
-            SELECT d.id, d.usuario_id, u.nombre, u.correo,
-                   d.concepto, d.empresa, d.monto,
-                   d.vencimiento, d.estado
-            FROM deudas d
-            INNER JOIN usuarios u ON u.id = d.usuario_id
-            ${if (usuarioId != null) "WHERE d.usuario_id = ?" else ""}
-            ORDER BY d.id DESC
-        """.trimIndent()
 
-        readableDatabase.rawQuery(
-            sql,
-            if (usuarioId != null) arrayOf(usuarioId.toString()) else null
-        ).use { c ->
-            while (c.moveToNext()) {
+        val sql: String
+        val argumentos: Array<String>?
+
+        if (usuarioId == null) {
+            sql =
+                """
+                SELECT d.id, d.concepto, d.empresa, d.monto,
+                       d.vencimiento, d.estado, u.nombre
+                FROM deudas d
+                INNER JOIN usuarios u ON u.id = d.usuario_id
+                ORDER BY d.id DESC
+                """.trimIndent()
+            argumentos = null
+        } else {
+            sql =
+                """
+                SELECT d.id, d.concepto, d.empresa, d.monto,
+                       d.vencimiento, d.estado, u.nombre
+                FROM deudas d
+                INNER JOIN usuarios u ON u.id = d.usuario_id
+                WHERE d.usuario_id = ?
+                ORDER BY d.id DESC
+                """.trimIndent()
+            argumentos = arrayOf(usuarioId.toString())
+        }
+
+        readableDatabase.rawQuery(sql, argumentos).use { cursor ->
+            while (cursor.moveToNext()) {
                 resultado.add(
                     mapOf(
-                        "id" to c.getInt(0).toString(),
-                        "usuarioId" to c.getInt(1).toString(),
-                        "nombreUsuario" to c.getString(2),
-                        "correo" to c.getString(3),
-                        "concepto" to c.getString(4),
-                        "empresa" to c.getString(5),
-                        "monto" to c.getDouble(6).toString(),
-                        "vencimiento" to c.getString(7),
-                        "estado" to c.getString(8)
+                        "id" to cursor.getInt(0).toString(),
+                        "concepto" to cursor.getString(1),
+                        "empresa" to cursor.getString(2),
+                        "monto" to cursor.getDouble(3).toString(),
+                        "vencimiento" to cursor.getString(4),
+                        "estado" to cursor.getString(5),
+                        "usuario" to cursor.getString(6)
                     )
                 )
             }
         }
+
         return resultado
     }
 
-    fun pagarDeuda(deudaId: Int, usuarioId: Int): Boolean {
+    fun pagarDeuda(
+        deudaId: Int,
+        usuarioId: Int
+    ): Boolean {
         val db = writableDatabase
         db.beginTransaction()
+
         try {
+            val monto: Double
 
-            val monto = db.rawQuery(
+            db.rawQuery(
                 """
-    SELECT monto FROM deudas
-    WHERE id = ? AND usuario_id = ? AND estado = 'PENDIENTE'
-    """.trimIndent(),
+                SELECT monto
+                FROM deudas
+                WHERE id = ?
+                  AND usuario_id = ?
+                  AND estado = 'PENDIENTE'
+                """.trimIndent(),
                 arrayOf(deudaId.toString(), usuarioId.toString())
-            ).use { c ->
-                if (!c.moveToFirst()) return false
-                c.getDouble(0)
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) return false
+                monto = cursor.getDouble(0)
             }
-
-
 
             val pago = ContentValues().apply {
                 put("deuda_id", deudaId)
                 put("monto", monto)
-                put("comprobante", "PF-$deudaId-${System.currentTimeMillis()}")
             }
-            if (db.insert("pagos", null, pago) == -1L) return false
+
+            if (db.insert("pagos", null, pago) == -1L) {
+                return false
+            }
 
             val actualizacion = ContentValues().apply {
                 put("estado", "PAGADA")
             }
-            val filas = db.update(
-                "deudas", actualizacion,
+
+            db.update(
+                "deudas",
+                actualizacion,
                 "id = ? AND usuario_id = ? AND estado = 'PENDIENTE'",
                 arrayOf(deudaId.toString(), usuarioId.toString())
             )
-            if (filas != 1) return false
 
             db.setTransactionSuccessful()
             return true
@@ -256,30 +303,40 @@ class PagoFlexDbHelper(context: Context) :
         }
     }
 
-    fun listarPagos(usuarioId: Int): List<Map<String, String>> {
+    fun listarPagos(
+        usuarioId: Int
+    ): List<Map<String, String>> {
         val resultado = mutableListOf<Map<String, String>>()
+
         readableDatabase.rawQuery(
             """
-            SELECT p.id, d.concepto, p.monto, p.fecha, p.comprobante
+            SELECT p.id, d.concepto, p.monto, p.fecha
             FROM pagos p
             INNER JOIN deudas d ON d.id = p.deuda_id
             WHERE d.usuario_id = ?
             ORDER BY p.id DESC
             """.trimIndent(),
             arrayOf(usuarioId.toString())
-        ).use { c ->
-            while (c.moveToNext()) {
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
                 resultado.add(
                     mapOf(
-                        "id" to c.getInt(0).toString(),
-                        "concepto" to c.getString(1),
-                        "monto" to c.getDouble(2).toString(),
-                        "fecha" to c.getString(3),
-                        "comprobante" to c.getString(4)
+                        "id" to cursor.getInt(0).toString(),
+                        "concepto" to cursor.getString(1),
+                        "monto" to cursor.getDouble(2).toString(),
+                        "fecha" to cursor.getString(3)
                     )
                 )
             }
         }
+
         return resultado
+    }
+
+    private fun hash(valor: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256")
+            .digest(valor.toByteArray(Charsets.UTF_8))
+
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 }
