@@ -3,6 +3,7 @@ package com.example.pagoflex.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,22 +26,18 @@ private val DashFondoBlanca = Color(0xFFF8FAFC)
 @Composable
 fun DashboardScreen(
     nombreUsuario: String,
-    deudaPendiente: Boolean,
-    conceptoDeuda: String = "",
-    empresaDeuda: String = "",
-    montoDeuda: Double = 0.0,
-    vencimientoDeuda: String = "",
-    onIrADetallePago: () -> Unit,
+    deudasPendientes: List<Map<String, String>> = emptyList(),
+    onPagarDeuda: (String) -> Unit,
     onIrAPagos: () -> Unit,
     onIrAHistorial: () -> Unit,
     onSeleccionarOpcionPerfil: (String) -> Unit
 ) {
     val scrollState = rememberScrollState()
     var menuExpandido by remember { mutableStateOf(false) }
-
-    val montoFormateado = NumberFormat
-        .getCurrencyInstance(Locale("es", "CL"))
-        .format(montoDeuda)
+    val formato = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
+    val totalPendiente = deudasPendientes.sumOf {
+        it["monto"]?.toDoubleOrNull() ?: 0.0
+    }
 
     Scaffold(
         bottomBar = {
@@ -88,10 +85,7 @@ fun DashboardScreen(
                     Box(
                         modifier = Modifier
                             .size(38.dp)
-                            .background(
-                                DashVerdeAccento,
-                                androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
-                            ),
+                            .background(DashVerdeAccento, RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -200,151 +194,175 @@ fun DashboardScreen(
             Text(
                 text = "¡Hola, ${nombreUsuario.ifBlank { "Usuario" }}!",
                 color = Color.White,
-                fontSize = 30.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "Tu tranquilidad financiera, al día.",
                 color = DashTextoBlancoSuave,
-                fontSize = 16.sp
+                fontSize = 15.sp
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            if (deudaPendiente && montoDeuda > 0) {
+            if (deudasPendientes.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
                             Text(
-                                text = "PRÓXIMO VENCIMIENTO",
-                                color = DashGrisClaro,
-                                fontSize = 12.sp,
+                                "TOTAL PENDIENTE",
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp
+                                color = DashGrisClaro
                             )
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        Color.Black,
-                                        androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    "Pendiente",
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(
-                                        DashFondoBlanca,
-                                        androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("🏢", fontSize = 24.sp)
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    empresaDeuda.ifBlank { conceptoDeuda },
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    color = DashTextoPrincipal
-                                )
-                                Text(
-                                    "📅 Vence $vencimientoDeuda",
-                                    color = DashGrisClaro,
-                                    fontSize = 14.sp
-                                )
-                                if (conceptoDeuda.isNotBlank() &&
-                                    conceptoDeuda != empresaDeuda
-                                ) {
-                                    Text(
-                                        conceptoDeuda,
-                                        color = DashGrisClaro,
-                                        fontSize = 13.sp
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-                        HorizontalDivider(color = DashFondoBlanca)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "MONTO A PAGAR",
-                            color = DashGrisClaro,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
                             Text(
-                                montoFormateado,
-                                fontSize = 34.sp,
+                                formato.format(totalPendiente),
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DashTextoPrincipal
                             )
-                            Text(
-                                "CLP",
-                                color = DashGrisClaro,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
                         }
+                        Text(
+                            "${deudasPendientes.size} deuda(s)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DashAzulFondo
+                        )
+                    }
+                }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                        Button(
-                            onClick = onIrADetallePago,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DashVerdeAccento,
-                                contentColor = DashAzulFondo
-                            )
-                        ) {
-                            Text(
-                                "Pagar ahora",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text("➔", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Cuentas por pagar",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                deudasPendientes.forEach { deuda ->
+                    val monto = deuda["monto"]?.toDoubleOrNull() ?: 0.0
+                    val id = deuda["id"].orEmpty()
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "PENDIENTE",
+                                    color = DashGrisClaro,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .background(Color.Black, RoundedCornerShape(10.dp))
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        "Vence ${deuda["vencimiento"].orEmpty()}",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .background(DashFondoBlanca, RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("🏢", fontSize = 20.sp)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        deuda["empresa"].orEmpty()
+                                            .ifBlank { deuda["concepto"].orEmpty() },
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = DashTextoPrincipal
+                                    )
+                                    if (deuda["concepto"].orEmpty() != deuda["empresa"].orEmpty()) {
+                                        Text(
+                                            deuda["concepto"].orEmpty(),
+                                            color = DashGrisClaro,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(color = DashFondoBlanca)
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    formato.format(monto),
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DashTextoPrincipal
+                                )
+                                Button(
+                                    onClick = { onPagarDeuda(id) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = DashVerdeAccento,
+                                        contentColor = DashAzulFondo
+                                    ),
+                                    contentPadding = PaddingValues(
+                                        horizontal = 16.dp,
+                                        vertical = 8.dp
+                                    )
+                                ) {
+                                    Text(
+                                        "Pagar",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             } else {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
@@ -366,49 +384,55 @@ fun DashboardScreen(
                             color = DashGrisClaro,
                             fontSize = 14.sp
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = onIrAHistorial,
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DashVerdeAccento,
+                                contentColor = DashAzulFondo
+                            )
+                        ) {
+                            Text(
+                                "Ver movimientos de pago",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DashVerdeAccento)
             ) {
                 Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.Top
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("📈", fontSize = 28.sp)
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Text("📈", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "TU RACHA DE PAGOS",
-                            color = DashAzulFondo.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            letterSpacing = 0.5.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "¡Llevas 4 meses en racha pagando!",
+                            text = "¡4 meses en racha pagando!",
                             color = DashAzulFondo,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Continúa pagando a tiempo para mantener tu buen hábito financiero.",
-                            color = DashAzulFondo.copy(alpha = 0.85f),
                             fontSize = 13.sp
+                        )
+                        Text(
+                            text = "Sigue pagando a tiempo.",
+                            color = DashAzulFondo.copy(alpha = 0.8f),
+                            fontSize = 11.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
