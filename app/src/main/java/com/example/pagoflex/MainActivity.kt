@@ -334,9 +334,20 @@ private fun AdminScreen(
         Button(
             onClick = {
                 val cantidad = monto.trim().replace(",", ".").toDoubleOrNull()
-                val fechaValida = runCatching {
-                    java.time.LocalDate.parse(vencimiento)
-                }.isSuccess
+
+                val fechaValida = try {
+                    val formato = java.text.SimpleDateFormat(
+                        "yyyy-MM-dd",
+                        java.util.Locale.US
+                    )
+                    formato.isLenient = false
+
+                    val fecha = formato.parse(vencimiento)
+                    fecha != null &&
+                            formato.format(fecha) == vencimiento
+                } catch (_: Exception) {
+                    false
+                }
 
                 when {
                     concepto.isBlank() || empresa.isBlank() ->
