@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -306,6 +307,20 @@ private fun LoginScreen(
     val azulFondo = Color(0xFF001F3F)
     val verdeAccento = Color(0xFFD4ED91)
     val textoSuave = Color(0xFFE2E8F0)
+    val textoOscuro = Color(0xFF0F172A)
+    val grisBorde = Color(0xFF94A3B8)
+
+    val coloresCampo = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = textoOscuro,
+        unfocusedTextColor = textoOscuro,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        focusedBorderColor = azulFondo,
+        unfocusedBorderColor = grisBorde,
+        focusedLabelColor = azulFondo,
+        unfocusedLabelColor = Color(0xFF64748B),
+        cursorColor = azulFondo
+    )
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -372,7 +387,8 @@ private fun LoginScreen(
                         onValueChange = onCorreo,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Correo electrónico") },
-                        singleLine = true
+                        singleLine = true,
+                        colors = coloresCampo
                     )
 
                     OutlinedTextField(
@@ -381,6 +397,7 @@ private fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Contraseña") },
                         singleLine = true,
+                        colors = coloresCampo,
                         visualTransformation = if (mostrarClave) {
                             androidx.compose.ui.text.input.VisualTransformation.None
                         } else {
@@ -401,7 +418,11 @@ private fun LoginScreen(
                     if (mensaje.isNotBlank()) {
                         Text(
                             text = mensaje,
-                            color = MaterialTheme.colorScheme.error,
+                            color = if (mensaje.contains("creada", ignoreCase = true)) {
+                                Color(0xFF247A3D)
+                            } else {
+                                Color(0xFFB42318)
+                            },
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -469,6 +490,24 @@ private fun AdminScreen(
     var usuarioId by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf("") }
 
+    val azulFondo = Color(0xFF001F3F)
+    val verdeAccento = Color(0xFFD4ED91)
+    val textoOscuro = Color(0xFF0F172A)
+    val grisBorde = Color(0xFF94A3B8)
+    val fondoClaro = Color(0xFFF1F5F9)
+
+    val coloresCampo = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = textoOscuro,
+        unfocusedTextColor = textoOscuro,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        focusedBorderColor = azulFondo,
+        unfocusedBorderColor = grisBorde,
+        focusedLabelColor = azulFondo,
+        unfocusedLabelColor = Color(0xFF64748B),
+        cursorColor = azulFondo
+    )
+
     val usuarios = remember(refrescar) {
         db.listarUsuarios()
     }
@@ -486,183 +525,260 @@ private fun AdminScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(azulFondo)
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = "Panel administrador",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text("Bienvenido, ${admin["nombre"].orEmpty()}")
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = "Crear deuda",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                OutlinedTextField(
-                    value = concepto,
-                    onValueChange = { concepto = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Concepto") },
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = empresa,
-                    onValueChange = { empresa = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Empresa / servicio") },
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = monto,
-                    onValueChange = { monto = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Monto en pesos") },
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = vencimiento,
-                    onValueChange = { vencimiento = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Vencimiento (AAAA-MM-DD)") },
-                    singleLine = true
-                )
-
-                Text(
-                    text = "Asignar a usuario",
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                if (usuarios.isEmpty()) {
-                    Text(
-                        text = "No hay usuarios. Crea una cuenta desde el login.",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    usuarios.forEach { usuario ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = usuarioId == usuario["id"],
-                                onClick = {
-                                    usuarioId = usuario["id"].orEmpty()
-                                }
-                            )
-                            Text("${usuario["nombre"]} (${usuario["correo"]})")
-                        }
-                    }
-                }
-
-                if (mensaje.isNotBlank()) {
-                    Text(
-                        text = mensaje,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        val valor = monto
-                            .replace(".", "")
-                            .replace(",", ".")
-                            .toDoubleOrNull()
-
-                        mensaje = when {
-                            concepto.isBlank() || empresa.isBlank() ->
-                                "Completa concepto y empresa."
-
-                            valor == null || valor <= 0 ->
-                                "Ingresa un monto válido."
-
-                            !Regex("\\d{4}-\\d{2}-\\d{2}")
-                                .matches(vencimiento) ->
-                                "Usa fecha AAAA-MM-DD."
-
-                            usuarioId.isBlank() ->
-                                "Registra un usuario antes de crear deudas."
-
-                            db.crearDeuda(
-                                usuarioId.toInt(),
-                                concepto,
-                                empresa,
-                                valor,
-                                vencimiento
-                            ) -> {
-                                concepto = ""
-                                empresa = ""
-                                monto = ""
-                                refrescar++
-                                "Deuda creada correctamente."
-                            }
-
-                            else -> "No se pudo crear la deuda."
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Guardar deuda")
-                }
-            }
-        }
-
-        Text(
-            text = "Deudas registradas",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-
-        AnimatedVisibility(visible = deudas.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                deudas.forEach { deuda ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp)) {
-                            Text(
-                                text = deuda["concepto"].orEmpty(),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Usuario: ${deuda["nombreUsuario"].orEmpty()} · " +
-                                        deuda["empresa"].orEmpty()
-                            )
-
-                            val formato = NumberFormat.getCurrencyInstance(
-                                Locale("es", "CL")
-                            )
-                            val montoDeuda =
-                                deuda["monto"]?.toDoubleOrNull() ?: 0.0
-
-                            Text(
-                                "${formato.format(montoDeuda)} · " +
-                                        "Vence ${deuda["vencimiento"].orEmpty()}"
-                            )
-                            Text("Estado: ${deuda["estado"].orEmpty()}")
-                        }
-                    }
-                }
-            }
-        }
-
-        if (deudas.isEmpty()) {
-            Text("Aún no hay deudas creadas.")
-        }
-
-        Button(
-            onClick = onSalir,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
         ) {
-            Text("Cerrar sesión")
+            Text(
+                text = "Panel administrador",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Bienvenido, ${admin["nombre"].orEmpty()}",
+                color = verdeAccento
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    fondoClaro,
+                    RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                )
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Crear deuda",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = azulFondo
+                    )
+
+                    OutlinedTextField(
+                        value = concepto,
+                        onValueChange = { concepto = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Concepto") },
+                        singleLine = true,
+                        colors = coloresCampo
+                    )
+
+                    OutlinedTextField(
+                        value = empresa,
+                        onValueChange = { empresa = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Empresa / servicio") },
+                        singleLine = true,
+                        colors = coloresCampo
+                    )
+
+                    OutlinedTextField(
+                        value = monto,
+                        onValueChange = { monto = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Monto en pesos") },
+                        singleLine = true,
+                        colors = coloresCampo
+                    )
+
+                    OutlinedTextField(
+                        value = vencimiento,
+                        onValueChange = { vencimiento = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Vencimiento (AAAA-MM-DD)") },
+                        singleLine = true,
+                        colors = coloresCampo
+                    )
+
+                    Text(
+                        text = "Asignar a usuario",
+                        fontWeight = FontWeight.SemiBold,
+                        color = azulFondo
+                    )
+
+                    if (usuarios.isEmpty()) {
+                        Text(
+                            text = "No hay usuarios. Crea una cuenta desde el login.",
+                            color = Color(0xFFB42318)
+                        )
+                    } else {
+                        usuarios.forEach { usuario ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = usuarioId == usuario["id"],
+                                    onClick = {
+                                        usuarioId = usuario["id"].orEmpty()
+                                    },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = azulFondo
+                                    )
+                                )
+                                Text(
+                                    "${usuario["nombre"]} (${usuario["correo"]})",
+                                    color = textoOscuro
+                                )
+                            }
+                        }
+                    }
+
+                    if (mensaje.isNotBlank()) {
+                        Text(
+                            text = mensaje,
+                            color = if (mensaje.contains("correctamente")) {
+                                Color(0xFF247A3D)
+                            } else {
+                                Color(0xFFB42318)
+                            }
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            val valor = monto
+                                .replace(".", "")
+                                .replace(",", ".")
+                                .toDoubleOrNull()
+
+                            mensaje = when {
+                                concepto.isBlank() || empresa.isBlank() ->
+                                    "Completa concepto y empresa."
+
+                                valor == null || valor <= 0 ->
+                                    "Ingresa un monto válido."
+
+                                !Regex("\\d{4}-\\d{2}-\\d{2}")
+                                    .matches(vencimiento) ->
+                                    "Usa fecha AAAA-MM-DD."
+
+                                usuarioId.isBlank() ->
+                                    "Registra un usuario antes de crear deudas."
+
+                                db.crearDeuda(
+                                    usuarioId.toInt(),
+                                    concepto,
+                                    empresa,
+                                    valor,
+                                    vencimiento
+                                ) -> {
+                                    concepto = ""
+                                    empresa = ""
+                                    monto = ""
+                                    refrescar++
+                                    "Deuda creada correctamente."
+                                }
+
+                                else -> "No se pudo crear la deuda."
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = verdeAccento,
+                            contentColor = azulFondo
+                        )
+                    ) {
+                        Text("Guardar deuda", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Text(
+                text = "Deudas registradas",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = azulFondo
+            )
+
+            AnimatedVisibility(visible = deudas.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    deudas.forEach { deuda ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(Modifier.padding(14.dp)) {
+                                Text(
+                                    text = deuda["concepto"].orEmpty(),
+                                    fontWeight = FontWeight.Bold,
+                                    color = azulFondo
+                                )
+                                Text(
+                                    "Usuario: ${deuda["nombreUsuario"].orEmpty()} · " +
+                                            deuda["empresa"].orEmpty(),
+                                    color = Color(0xFF64748B)
+                                )
+
+                                val formato = NumberFormat.getCurrencyInstance(
+                                    Locale("es", "CL")
+                                )
+                                val montoDeuda =
+                                    deuda["monto"]?.toDoubleOrNull() ?: 0.0
+
+                                Text(
+                                    "${formato.format(montoDeuda)} · " +
+                                            "Vence ${deuda["vencimiento"].orEmpty()}",
+                                    color = textoOscuro
+                                )
+                                Text(
+                                    "Estado: ${deuda["estado"].orEmpty()}",
+                                    color = if (deuda["estado"] == "PAGADA") {
+                                        Color(0xFF247A3D)
+                                    } else {
+                                        Color(0xFFB45309)
+                                    },
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (deudas.isEmpty()) {
+                Text(
+                    "Aún no hay deudas creadas.",
+                    color = Color(0xFF64748B)
+                )
+            }
+
+            Button(
+                onClick = onSalir,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFEF4444),
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Cerrar sesión", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
