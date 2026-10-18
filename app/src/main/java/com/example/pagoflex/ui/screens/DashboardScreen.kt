@@ -1,438 +1,456 @@
 package com.example.pagoflex.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.data.ValidacionesDeuda
 import java.text.NumberFormat
+import java.util.Calendar
 import java.util.Locale
 
-private val DashAzulFondo = Color(0xFF001F3F)
-private val DashVerdeAccento = Color(0xFFD4ED91)
-private val DashTextoBlancoSuave = Color(0xFFE2E8F0)
-private val DashGrisClaro = Color(0xFF64748B)
-private val DashTextoPrincipal = Color(0xFF0F172A)
-private val DashFondoBlanca = Color(0xFFF8FAFC)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     nombreUsuario: String,
-    deudasPendientes: List<Map<String, String>> = emptyList(),
+    deudasPendientes: List<Map<String, String>>,
     onPagarDeuda: (String) -> Unit,
     onIrAPagos: () -> Unit,
     onIrAHistorial: () -> Unit,
-    onSeleccionarOpcionPerfil: (String) -> Unit
+    onSeleccionarOpcionPerfil: (String) -> Unit,
+    onActualizar: () -> Unit = {},
+    cargando: Boolean = false
 ) {
-    val scrollState = rememberScrollState()
-    var menuExpandido by remember { mutableStateOf(false) }
-    val formato = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
-    val totalPendiente = deudasPendientes.sumOf {
+    val colores = MaterialTheme.colorScheme
+
+    var menuExpandido by remember {
+        mutableStateOf(false)
+    }
+
+    val formatoMoneda = remember {
+        NumberFormat.getCurrencyInstance(Locale("es", "CL"))
+    }
+
+    val coloresNavegacion = NavigationBarItemDefaults.colors(
+        selectedIconColor = colores.onSecondaryContainer,
+        selectedTextColor = colores.onSurface,
+        indicatorColor = colores.secondaryContainer,
+        unselectedIconColor = colores.onSurfaceVariant,
+        unselectedTextColor = colores.onSurfaceVariant
+    )
+
+    val deudasOrdenadas = deudasPendientes
+        .filter {
+            it["estado"] == "PENDIENTE"
+        }
+        .sortedWith(
+            compareBy<Map<String, String>> {
+                if (
+                    ValidacionesDeuda.fechaValida(
+                        it["vencimiento"].orEmpty()
+                    )
+                ) {
+                    0
+                } else {
+                    1
+                }
+            }.thenBy {
+                it["vencimiento"].orEmpty()
+            }
+        )
+
+    val totalPendiente = deudasOrdenadas.sumOf {
         it["monto"]?.toDoubleOrNull() ?: 0.0
     }
 
+    val saludo = when (
+        Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    ) {
+        in 5..11 -> "BUENOS DÍAS"
+        in 12..19 -> "BUENAS TARDES"
+        else -> "BUENAS NOCHES"
+    }
+
     Scaffold(
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Text("🏠", fontSize = 20.sp) },
-                    label = { Text("Inicio") },
-                    selected = true,
-                    onClick = { }
-                )
-                NavigationBarItem(
-                    icon = { Text("📄", fontSize = 20.sp) },
-                    label = { Text("Pagos") },
-                    selected = false,
-                    onClick = onIrAPagos
-                )
-                NavigationBarItem(
-                    icon = { Text("🕒", fontSize = 20.sp) },
-                    label = { Text("Historial") },
-                    selected = false,
-                    onClick = onIrAHistorial
-                )
-            }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(DashAzulFondo)
-                .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(24.dp))
+        containerColor = colores.background,
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(DashVerdeAccento, RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "P",
-                            color = DashAzulFondo,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "PagoFlex",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-
-                Box {
-                    IconButton(onClick = { menuExpandido = true }) {
-                        Surface(
-                            shape = androidx.compose.foundation.shape.CircleShape,
-                            color = DashVerdeAccento,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = if (nombreUsuario.isNotBlank()) {
-                                        nombreUsuario.take(1).uppercase()
-                                    } else {
-                                        "U"
-                                    },
-                                    color = DashAzulFondo,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
-                                )
-                            }
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = menuExpandido,
-                        onDismissRequest = { menuExpandido = false },
-                        modifier = Modifier.background(Color.White)
-                    ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    "👤 Mi Cuenta y Datos",
-                                    fontWeight = FontWeight.Bold,
-                                    color = DashTextoPrincipal
-                                )
-                            },
-                            onClick = {
-                                menuExpandido = false
-                                onSeleccionarOpcionPerfil("cuenta")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text("💳 Mis Tarjetas", color = DashTextoPrincipal)
-                            },
-                            onClick = {
-                                menuExpandido = false
-                                onSeleccionarOpcionPerfil("tarjetas")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text("⚙️ Configuración", color = DashTextoPrincipal)
-                            },
-                            onClick = {
-                                menuExpandido = false
-                                onSeleccionarOpcionPerfil("configuracion")
-                            }
-                        )
-                        HorizontalDivider()
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    "🚪 Cerrar Sesión",
-                                    color = Color(0xFFEF4444),
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
-                            onClick = {
-                                menuExpandido = false
-                                onSeleccionarOpcionPerfil("salir")
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "BUENOS DÍAS",
-                color = DashVerdeAccento,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "¡Hola, ${nombreUsuario.ifBlank { "Usuario" }}!",
-                color = Color.White,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "Tu tranquilidad financiera, al día.",
-                color = DashTextoBlancoSuave,
-                fontSize = 15.sp
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            if (deudasPendientes.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
+        topBar = {
+            TopAppBar(
+                title = {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(
-                                "TOTAL PENDIENTE",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DashGrisClaro
-                            )
-                            Text(
-                                formato.format(totalPendiente),
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DashTextoPrincipal
-                            )
-                        }
-                        Text(
-                            "${deudasPendientes.size} deuda(s)",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DashAzulFondo
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Text(
-                    "Cuentas por pagar",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                deudasPendientes.forEach { deuda ->
-                    val monto = deuda["monto"]?.toDoubleOrNull() ?: 0.0
-                    val id = deuda["id"].orEmpty()
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp),
-                        shape = RoundedCornerShape(22.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = colores.secondary,
+                            contentColor = colores.onSecondary
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "PENDIENTE",
-                                    color = DashGrisClaro,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
+                                    text = "P",
+                                    fontSize = 23.sp,
+                                    fontWeight = FontWeight.Bold
                                 )
+                            }
+                        }
+
+                        Spacer(Modifier.width(10.dp))
+
+                        Text(
+                            text = "PagoFlex",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+
+                actions = {
+                    Box {
+                        IconButton(
+                            onClick = {
+                                menuExpandido = true
+                            }
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(36.dp),
+                                shape = CircleShape,
+                                color = colores.secondary,
+                                contentColor = colores.onSecondary
+                            ) {
                                 Box(
-                                    modifier = Modifier
-                                        .background(Color.Black, RoundedCornerShape(10.dp))
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        "Vence ${deuda["vencimiento"].orEmpty()}",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
+                                        text = nombreUsuario
+                                            .take(1)
+                                            .uppercase()
+                                            .ifBlank { "U" },
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
+                        }
 
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .background(DashFondoBlanca, RoundedCornerShape(12.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("🏢", fontSize = 20.sp)
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        deuda["empresa"].orEmpty()
-                                            .ifBlank { deuda["concepto"].orEmpty() },
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        color = DashTextoPrincipal
-                                    )
-                                    if (deuda["concepto"].orEmpty() != deuda["empresa"].orEmpty()) {
-                                        Text(
-                                            deuda["concepto"].orEmpty(),
-                                            color = DashGrisClaro,
-                                            fontSize = 13.sp
-                                        )
-                                    }
-                                }
+                        DropdownMenu(
+                            expanded = menuExpandido,
+                            onDismissRequest = {
+                                menuExpandido = false
                             }
-
-                            Spacer(modifier = Modifier.height(14.dp))
-                            HorizontalDivider(color = DashFondoBlanca)
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    formato.format(monto),
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DashTextoPrincipal
+                        ) {
+                            listOf(
+                                "cuenta" to "Mi cuenta y datos",
+                                "tarjetas" to "Mis tarjetas",
+                                "configuracion" to "Configuración",
+                                "salir" to "Cerrar sesión"
+                            ).forEach { (opcion, titulo) ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = titulo,
+                                            color = if (opcion == "salir") {
+                                                colores.error
+                                            } else {
+                                                colores.onSurface
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpandido = false
+                                        onSeleccionarOpcionPerfil(opcion)
+                                    }
                                 )
-                                Button(
-                                    onClick = { onPagarDeuda(id) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = DashVerdeAccento,
-                                        contentColor = DashAzulFondo
-                                    ),
-                                    contentPadding = PaddingValues(
-                                        horizontal = 16.dp,
-                                        vertical = 8.dp
-                                    )
-                                ) {
-                                    Text(
-                                        "Pagar",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-                                }
                             }
                         }
                     }
+                },
+
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colores.primary,
+                    titleContentColor = colores.onPrimary,
+                    actionIconContentColor = colores.onPrimary
+                )
+            )
+        },
+
+        bottomBar = {
+            NavigationBar(
+                containerColor = colores.surface,
+                contentColor = colores.onSurface
+            ) {
+                NavigationBarItem(
+                    selected = true,
+                    onClick = {},
+                    icon = {
+                        Text("🏠")
+                    },
+                    label = {
+                        Text("Inicio")
+                    },
+                    colors = coloresNavegacion
+                )
+
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onIrAPagos,
+                    icon = {
+                        Text("📄")
+                    },
+                    label = {
+                        Text("Pagos")
+                    },
+                    colors = coloresNavegacion
+                )
+
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onIrAHistorial,
+                    icon = {
+                        Text("🕒")
+                    },
+                    label = {
+                        Text("Historial")
+                    },
+                    colors = coloresNavegacion
+                )
+            }
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = saludo,
+                        color = colores.primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "¡Hola, ${
+                            nombreUsuario.ifBlank { "Usuario" }
+                        }!",
+                        color = colores.onBackground,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "Tus deudas y vencimientos, en un solo lugar.",
+                        color = colores.onSurfaceVariant
+                    )
+
+                    TextButton(
+                        onClick = onActualizar,
+                        enabled = !cargando
+                    ) {
+                        Text(
+                            text = if (cargando) {
+                                "Actualizando..."
+                            } else {
+                                "Actualizar deudas"
+                            }
+                        )
+                    }
+
+                    if (cargando) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
-            } else {
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = colores.surface,
+                        contentColor = colores.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 2.dp
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "TOTAL PENDIENTE",
+                            color = colores.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+
+                        Text(
+                            text = formatoMoneda.format(totalPendiente),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 30.sp
+                        )
+
+                        Text(
+                            text = "${deudasOrdenadas.size} deuda(s) pendiente(s)",
+                            color = colores.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            if (deudasOrdenadas.isEmpty() && !cargando) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = colores.secondaryContainer,
+                            contentColor = colores.onSecondaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "¡Todo al día!",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 22.sp
+                            )
+
+                            Text(
+                                text = "No tienes deudas pendientes."
+                            )
+                        }
+                    }
+                }
+            }
+
+            itemsIndexed(
+                items = deudasOrdenadas,
+                key = { _, deuda ->
+                    deuda["id"].orEmpty()
+                }
+            ) { indice, deuda ->
+                val id = deuda["id"].orEmpty()
+                val fecha = deuda["vencimiento"].orEmpty()
+                val monto = deuda["monto"]?.toDoubleOrNull() ?: 0.0
+                val dias = ValidacionesDeuda.diasHasta(fecha)
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    colors = CardDefaults.cardColors(
+                        containerColor = colores.surface,
+                        contentColor = colores.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 2.dp
+                    )
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("✅", fontSize = 36.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            "¡Todo al día!",
-                            fontWeight = FontWeight.Bold,
+                            text = if (indice == 0) {
+                                "PRIMERA CUENTA POR ATENDER"
+                            } else {
+                                "CUENTA PENDIENTE"
+                            },
+                            color = colores.onSurfaceVariant,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            text = deuda["empresa"]
+                                .orEmpty()
+                                .ifBlank { "Empresa o servicio" },
                             fontSize = 20.sp,
-                            color = DashTextoPrincipal
+                            fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+
                         Text(
-                            "No tienes deudas pendientes por pagar.",
-                            color = DashGrisClaro,
-                            fontSize = 14.sp
+                            text = deuda["concepto"].orEmpty(),
+                            color = colores.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Vencimiento: $fecha",
+                            color = colores.onSurfaceVariant
+                        )
+
+                        Text(
+                            text = ValidacionesDeuda.textoVencimiento(fecha),
+                            color = if (dias == null || dias < 0) {
+                                colores.error
+                            } else {
+                                colores.primary
+                            },
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        if (dias == null) {
+                            Text(
+                                text = "El administrador debe corregir esta fecha.",
+                                color = colores.error,
+                                fontSize = 12.sp
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = colores.outline.copy(alpha = 0.3f)
+                        )
+
+                        Text(
+                            text = formatoMoneda.format(monto),
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
                         Button(
-                            onClick = onIrAHistorial,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            onClick = {
+                                onPagarDeuda(id)
+                            },
+                            enabled = !cargando &&
+                                    id.isNotBlank() &&
+                                    monto.isFinite() &&
+                                    monto > 0,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = DashVerdeAccento,
-                                contentColor = DashAzulFondo
+                                containerColor = colores.secondary,
+                                contentColor = colores.onSecondary
                             )
                         ) {
                             Text(
-                                "Ver movimientos de pago",
+                                text = "Pagar esta deuda",
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DashVerdeAccento)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("📈", fontSize = 18.sp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "¡4 meses en racha pagando!",
-                            color = DashAzulFondo,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
-                        Text(
-                            text = "Sigue pagando a tiempo.",
-                            color = DashAzulFondo.copy(alpha = 0.8f),
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

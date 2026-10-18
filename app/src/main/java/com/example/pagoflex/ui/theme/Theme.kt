@@ -1,79 +1,152 @@
 package com.example.pagoflex.ui.theme
 
+import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
-// Paleta oscura: fondo oscuro y textos claros para mejorar la lectura.
 private val EsquemaOscuro = darkColorScheme(
     primary = PrimarioClaro,
     onPrimary = PrimarioOscuro,
     primaryContainer = PrimarioOscuro,
-    onPrimaryContainer = Blanco,
+    onPrimaryContainer = TextoClaro,
 
-    // Verde lima para las acciones, con texto oscuro encima.
     secondary = Acento,
     onSecondary = AcentoOscuro,
+    secondaryContainer = AcentoOscuro,
+    onSecondaryContainer = Acento,
 
-    // Turquesa como color de apoyo.
     tertiary = Secundario,
-    onTertiary = Blanco,
+    onTertiary = PrimarioOscuro,
 
     background = FondoOscuro,
     onBackground = TextoClaro,
+
     surface = SuperficieOscura,
-    onSurface = TextoClaro
+    onSurface = TextoClaro,
+    surfaceVariant = Primario,
+    onSurfaceVariant = PrimarioClaro,
+
+    outline = GrisDeshabilitado,
+
+    error = androidx.compose.ui.graphics.Color(0xFFFFB4AB),
+    onError = androidx.compose.ui.graphics.Color(0xFF690005)
 )
 
-// Paleta clara: colores tomados del diseño de Figma.
 private val EsquemaClaro = lightColorScheme(
     primary = Primario,
     onPrimary = Blanco,
     primaryContainer = PrimarioClaro,
     onPrimaryContainer = PrimarioOscuro,
 
-    // Verde lima para el botón principal.
     secondary = Acento,
     onSecondary = AcentoOscuro,
+    secondaryContainer = Acento,
+    onSecondaryContainer = AcentoOscuro,
 
-    // Turquesa como color de apoyo.
     tertiary = Secundario,
     onTertiary = Blanco,
 
     background = FondoClaro,
     onBackground = TextoOscuro,
+
     surface = SuperficieClara,
-    onSurface = TextoOscuro
+    onSurface = TextoOscuro,
+    surfaceVariant = PrimarioClaro,
+    onSurfaceVariant = Primario,
+
+    outline = androidx.compose.ui.graphics.Color(0xFF74777F),
+
+    error = ErrorPagoFlex,
+    onError = Blanco
 )
 
-// Formas redondeadas de los componentes Material 3.
 private val Formas = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
     large = RoundedCornerShape(20.dp)
 )
 
+data class ControlTemaPagoFlex(
+    val oscuro: Boolean,
+    val sigueSistema: Boolean,
+    val cambiarModoOscuro: (Boolean) -> Unit,
+    val usarTemaDelSistema: () -> Unit
+)
+
+val LocalControlTemaPagoFlex = staticCompositionLocalOf<ControlTemaPagoFlex> {
+    error("La pantalla debe estar dentro de PagoFlexTheme.")
+}
+
 @Composable
 fun PagoFlexTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        darkTheme -> EsquemaOscuro
-        else -> EsquemaClaro
+    val context = LocalContext.current.applicationContext
+
+    val preferencias = remember(context) {
+        context.getSharedPreferences(
+            "pagoflex_apariencia",
+            Context.MODE_PRIVATE
+        )
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Tipografia,
-        shapes = Formas,
-        content = content
+    // null significa que todavía se utiliza el tema del sistema.
+    var eleccionManual by remember(preferencias) {
+        mutableStateOf<Boolean?>(
+            if (preferencias.contains("modo_oscuro")) {
+                preferencias.getBoolean("modo_oscuro", false)
+            } else {
+                null
+            }
+        )
+    }
+
+    val oscuroActual = eleccionManual ?: darkTheme
+
+    val controlTema = ControlTemaPagoFlex(
+        oscuro = oscuroActual,
+        sigueSistema = eleccionManual == null,
+
+        cambiarModoOscuro = { activar ->
+            preferencias.edit()
+                .putBoolean("modo_oscuro", activar)
+                .apply()
+
+            eleccionManual = activar
+        },
+
+        usarTemaDelSistema = {
+            preferencias.edit()
+                .remove("modo_oscuro")
+                .apply()
+
+            eleccionManual = null
+        }
     )
+
+    // Se conserva dynamicColor en la firma por compatibilidad,
+    // pero se usan siempre los colores de identidad de PagoFlex.
+    CompositionLocalProvider(
+        LocalControlTemaPagoFlex provides controlTema
+    ) {
+        MaterialTheme(
+            colorScheme = if (oscuroActual) {
+                EsquemaOscuro
+            } else {
+                EsquemaClaro
+            },
+            typography = Tipografia,
+            shapes = Formas,
+            content = content
+        )
+    }
 }

@@ -1,4 +1,3 @@
-
 package com.example.pagoflex.data
 
 import android.content.Context
@@ -19,14 +18,21 @@ class PagoFlexRepository(context: Context) {
         correo: String,
         clave: String
     ): Boolean {
-        if (nombre.isBlank() || correo.isBlank() || clave.length < 6) {
-            return false
-        }
-        return db.registrarUsuario(nombre, correo, clave)
+        return db.registrarUsuario(
+            nombre,
+            correo,
+            clave
+        )
     }
 
     fun listarUsuarios(): List<Map<String, String>> {
         return db.listarUsuarios()
+    }
+
+    fun listarClientes(): List<Map<String, String>> {
+        return db.listarUsuarios().filter {
+            it["rol"] == "USUARIO"
+        }
     }
 
     fun crearDeuda(
@@ -37,8 +43,34 @@ class PagoFlexRepository(context: Context) {
         vencimiento: String
     ): Boolean {
         return db.crearDeuda(
-            usuarioId, concepto, empresa, monto, vencimiento
+            usuarioId,
+            concepto,
+            empresa,
+            monto,
+            vencimiento
         )
+    }
+
+    fun actualizarDeuda(
+        deudaId: Int,
+        usuarioId: Int,
+        concepto: String,
+        empresa: String,
+        monto: Double,
+        vencimiento: String
+    ): Boolean {
+        return db.actualizarDeuda(
+            deudaId,
+            usuarioId,
+            concepto,
+            empresa,
+            monto,
+            vencimiento
+        )
+    }
+
+    fun eliminarDeuda(deudaId: Int): Boolean {
+        return db.eliminarDeuda(deudaId)
     }
 
     fun listarDeudas(
@@ -47,11 +79,22 @@ class PagoFlexRepository(context: Context) {
         return db.listarDeudas(usuarioId)
     }
 
+    fun listarDeudasPendientes(
+        usuarioId: Int
+    ): List<Map<String, String>> {
+        return db.listarDeudas(usuarioId).filter {
+            it["estado"] == "PENDIENTE"
+        }
+    }
+
     fun pagarDeuda(
         deudaId: Int,
         usuarioId: Int
     ): Boolean {
-        return db.pagarDeuda(deudaId, usuarioId)
+        return db.pagarDeuda(
+            deudaId,
+            usuarioId
+        )
     }
 
     fun listarPagos(

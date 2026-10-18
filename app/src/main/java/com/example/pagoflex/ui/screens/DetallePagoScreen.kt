@@ -1,4 +1,3 @@
-
 package com.example.pagoflex.ui.screens
 
 import androidx.compose.foundation.background
@@ -17,7 +16,6 @@ import androidx.compose.ui.unit.sp
 import java.text.NumberFormat
 import java.util.Locale
 
-// Colores de la pantalla Detalle de Pago
 private val FondoPantallaClaro = Color(0xFFF1F5F9)
 private val ColorTarjetaBlanca = Color.White
 private val ColorTextoOscuro = Color(0xFF0F172A)
@@ -29,18 +27,23 @@ private val AzulOscuroTexto = Color(0xFF001F3F)
 fun DetallePagoScreen(
     onVolverAtras: () -> Unit,
     onConfirmarPago: () -> Unit,
-    empresa: String = "Enel Distribución",
-    concepto: String = "Cuenta de electricidad",
-    monto: Double = 125000.0
+    empresa: String = "",
+    concepto: String = "",
+    monto: Double = 0.0,
+    ultimosDigitosTarjeta: String = "",
+    titularTarjeta: String = "",
+    onIrAVincularTarjeta: () -> Unit = {}
 ) {
-    val scrollState = rememberScrollState()
-
-    // Formato de moneda chilena
     val montoFormateado = NumberFormat
         .getCurrencyInstance(Locale("es", "CL"))
         .format(monto)
 
+    val tieneTarjeta = ultimosDigitosTarjeta.matches(
+        Regex("[0-9]{4}")
+    )
+
     Scaffold(
+        containerColor = FondoPantallaClaro,
         bottomBar = {
             Surface(
                 color = Color.White,
@@ -50,24 +53,20 @@ fun DetallePagoScreen(
                 Column(
                     modifier = Modifier
                         .navigationBarsPadding()
-                        .padding(20.dp)
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "🔒 Pago protegido y encriptado",
-                            fontSize = 12.sp,
-                            color = ColorGrisTexto
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Pago de demostración. No se realiza un cargo bancario.",
+                        fontSize = 12.sp,
+                        color = ColorGrisTexto
+                    )
 
                     Button(
                         onClick = onConfirmarPago,
+                        enabled = tieneTarjeta &&
+                                monto.isFinite() &&
+                                monto > 0,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(54.dp),
@@ -82,14 +81,6 @@ fun DetallePagoScreen(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = "➔",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
             }
@@ -99,16 +90,18 @@ fun DetallePagoScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(FondoPantallaClaro)
-                .verticalScroll(scrollState)
-                .padding(20.dp)
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Encabezado
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onVolverAtras) {
+                IconButton(
+                    onClick = onVolverAtras
+                ) {
                     Text(
                         text = "‹",
                         fontSize = 32.sp,
@@ -117,7 +110,7 @@ fun DetallePagoScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(Modifier.width(8.dp))
 
                 Text(
                     text = "Detalle de pago",
@@ -127,9 +120,6 @@ fun DetallePagoScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Tarjeta con los datos de la deuda
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -142,6 +132,7 @@ fun DetallePagoScreen(
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
@@ -159,8 +150,6 @@ fun DetallePagoScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     Text(
                         text = "PAGAR A",
                         fontSize = 11.sp,
@@ -169,75 +158,57 @@ fun DetallePagoScreen(
                         letterSpacing = 1.sp
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
                     Text(
-                        text = empresa,
+                        text = empresa.ifBlank { "Empresa o servicio" },
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = ColorTextoOscuro
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    HorizontalDivider(
+                        color = FondoPantallaClaro
+                    )
 
-                    HorizontalDivider(color = FondoPantallaClaro)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Empresa emisora
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             text = "Emisor",
                             color = ColorGrisTexto,
-                            fontSize = 14.sp
+                            fontSize = 13.sp
                         )
-
-                        Spacer(modifier = Modifier.width(12.dp))
 
                         Text(
                             text = empresa,
                             color = ColorTextoOscuro,
-                            fontSize = 14.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Concepto de la deuda
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             text = "Concepto",
                             color = ColorGrisTexto,
-                            fontSize = 14.sp
+                            fontSize = 13.sp
                         )
-
-                        Spacer(modifier = Modifier.width(12.dp))
 
                         Text(
                             text = concepto,
-                            modifier = Modifier.weight(1f),
                             color = ColorTextoOscuro,
-                            fontSize = 13.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    HorizontalDivider(
+                        color = FondoPantallaClaro
+                    )
 
-                    HorizontalDivider(color = FondoPantallaClaro)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Monto dinámico
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -245,107 +216,131 @@ fun DetallePagoScreen(
                     ) {
                         Text(
                             text = "Monto total",
+                            modifier = Modifier.weight(1f),
                             color = ColorGrisTexto,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 14.sp
                         )
-
-                        Spacer(modifier = Modifier.width(12.dp))
 
                         Text(
                             text = montoFormateado,
                             color = ColorTextoOscuro,
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Medio de pago",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorTextoOscuro
+            )
 
-            // Medio de pago
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "2  Medio de pago",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorTextoOscuro
-                )
-
-                Text(
-                    text = "Método registrado",
-                    fontSize = 12.sp,
-                    color = ColorGrisTexto
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Tarjeta de pago
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = ColorTextoOscuro
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                Color.White.copy(alpha = 0.15f),
-                                RoundedCornerShape(10.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "💳",
-                            fontSize = 20.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = "Tarjeta de Crédito",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = Color.White
-                        )
-
-                        Text(
-                            text = "•••• 4582 • Visa",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = "Principal",
-                        fontSize = 11.sp,
-                        color = VerdeBotonPago,
-                        fontWeight = FontWeight.Bold
+            if (tieneTarjeta) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = AzulOscuroTexto
                     )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "💳",
+                                fontSize = 24.sp
+                            )
+
+                            Spacer(Modifier.width(12.dp))
+
+                            Text(
+                                text = "Tarjeta de demostración",
+                                modifier = Modifier.weight(1f),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+
+                            Text(
+                                text = "Principal",
+                                color = VerdeBotonPago,
+                                fontSize = 11.sp
+                            )
+                        }
+
+                        Text(
+                            text = "•••• •••• •••• $ultimosDigitosTarjeta",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
+                        )
+
+                        if (titularTarjeta.isNotBlank()) {
+                            Text(
+                                text = titularTarjeta,
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onIrAVincularTarjeta,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Gestionar tarjeta de prueba")
+                }
+            } else {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "No tienes tarjetas vinculadas",
+                            color = ColorTextoOscuro,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            text = "Vincula una tarjeta de prueba para continuar con el pago simulado.",
+                            color = ColorGrisTexto,
+                            fontSize = 14.sp
+                        )
+
+                        Button(
+                            onClick = onIrAVincularTarjeta,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = VerdeBotonPago,
+                                contentColor = AzulOscuroTexto
+                            )
+                        ) {
+                            Text("Vincular tarjeta de prueba")
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
