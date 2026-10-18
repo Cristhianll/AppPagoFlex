@@ -218,17 +218,19 @@ class PagoFlexDbHelper(context: Context) :
         val db = writableDatabase
         db.beginTransaction()
         try {
-            val monto: Double
-            db.rawQuery(
+
+            val monto = db.rawQuery(
                 """
-                SELECT monto FROM deudas
-                WHERE id = ? AND usuario_id = ? AND estado = 'PENDIENTE'
-                """.trimIndent(),
+    SELECT monto FROM deudas
+    WHERE id = ? AND usuario_id = ? AND estado = 'PENDIENTE'
+    """.trimIndent(),
                 arrayOf(deudaId.toString(), usuarioId.toString())
             ).use { c ->
                 if (!c.moveToFirst()) return false
-                monto = c.getDouble(0)
+                c.getDouble(0)
             }
+
+
 
             val pago = ContentValues().apply {
                 put("deuda_id", deudaId)
