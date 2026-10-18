@@ -9,23 +9,39 @@ import kotlinx.coroutines.flow.update
 
 class PagoViewModel : ViewModel() {
 
-    // Estado privado: solo este ViewModel puede cambiarlo.
     private val _uiState = MutableStateFlow(PagoUiState())
-
     val uiState: StateFlow<PagoUiState> = _uiState.asStateFlow()
 
-    // Se ejecuta al confirmar el pago. El Dashboard reaccionará al cambio.
     fun confirmarPago() {
-        _uiState.update { estadoActual ->
-            estadoActual.copy(deudaPendiente = false)
+        _uiState.update { it.copy(deudaPendiente = false) }
+    }
+
+    fun reiniciarPago() {
+        _uiState.update { it.copy(deudaPendiente = true) }
+    }
+
+    fun vincularTarjeta(ultimosDigitos: String) {
+        val limpios = ultimosDigitos.filter { it.isDigit() }.takeLast(4)
+        if (limpios.length == 4) {
+            _uiState.update {
+                it.copy(
+                    tarjetaVisaRegistrada = true,
+                    ultimosDigitosVisa = limpios,
+                    tarjetaPrincipal = true
+                )
+            }
         }
     }
 
-    // Restablece la deuda para una nueva sesión de prueba.
-    fun reiniciarPago() {
-        _uiState.update { estadoActual ->
-            estadoActual.copy(deudaPendiente = true)
-        }
+    fun alternarNotificaciones() {
+        _uiState.update { it.copy(notificacionesActivas = !it.notificacionesActivas) }
+    }
+
+    fun alternarModoOscuro() {
+        _uiState.update { it.copy(modoOscuroAutomatico = !it.modoOscuroAutomatico) }
+    }
+
+    fun alternarBiometria() {
+        _uiState.update { it.copy(biometriaActiva = !it.biometriaActiva) }
     }
 }
-

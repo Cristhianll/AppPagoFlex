@@ -1,3 +1,4 @@
+
 package com.example.pagoflex.ui.screens
 
 import androidx.compose.foundation.background
@@ -13,8 +14,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.NumberFormat
+import java.util.Locale
 
-// Colores específicos para Detalle de Pago
+// Colores de la pantalla Detalle de Pago
 private val FondoPantallaClaro = Color(0xFFF1F5F9)
 private val ColorTarjetaBlanca = Color.White
 private val ColorTextoOscuro = Color(0xFF0F172A)
@@ -25,19 +28,30 @@ private val AzulOscuroTexto = Color(0xFF001F3F)
 @Composable
 fun DetallePagoScreen(
     onVolverAtras: () -> Unit,
-    onConfirmarPago: () -> Unit
+    onConfirmarPago: () -> Unit,
+    empresa: String = "Enel Distribución",
+    concepto: String = "Cuenta de electricidad",
+    monto: Double = 125000.0
 ) {
     val scrollState = rememberScrollState()
 
+    // Formato de moneda chilena
+    val montoFormateado = NumberFormat
+        .getCurrencyInstance(Locale("es", "CL"))
+        .format(monto)
+
     Scaffold(
         bottomBar = {
-            // Barra inferior fija con el botón de confirmación de pago.
             Surface(
                 color = Color.White,
                 tonalElevation = 12.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+                Column(
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(20.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
@@ -64,11 +78,13 @@ fun DetallePagoScreen(
                         )
                     ) {
                         Text(
-                            text = "Confirmar pago · $125,000",
+                            text = "Confirmar pago · $montoFormateado",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.weight(1f))
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
                             text = "➔",
                             fontSize = 20.sp,
@@ -87,7 +103,7 @@ fun DetallePagoScreen(
                 .verticalScroll(scrollState)
                 .padding(20.dp)
         ) {
-            // Cabecera con flecha atrás y título.
+            // Encabezado
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -113,7 +129,7 @@ fun DetallePagoScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Tarjeta superior de institución y monto.
+            // Tarjeta con los datos de la deuda
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -137,7 +153,10 @@ fun DetallePagoScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("🏢", fontSize = 24.sp)
+                        Text(
+                            text = "🏢",
+                            fontSize = 24.sp
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -150,51 +169,62 @@ fun DetallePagoScreen(
                         letterSpacing = 1.sp
                     )
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Enel Distribución",
+                        text = empresa,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = ColorTextoOscuro
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
+
                     HorizontalDivider(color = FondoPantallaClaro)
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Emisor.
+                    // Empresa emisora
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Emisor",
                             color = ColorGrisTexto,
                             fontSize = 14.sp
                         )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
                         Text(
-                            text = "Enel Distribución",
+                            text = empresa,
                             color = ColorTextoOscuro,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    // Concepto.
+                    // Concepto de la deuda
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
                     ) {
                         Text(
                             text = "Concepto",
                             color = ColorGrisTexto,
                             fontSize = 14.sp
                         )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
                         Text(
-                            text = "Cuenta de Agua - Consumo Mensual",
+                            text = concepto,
+                            modifier = Modifier.weight(1f),
                             color = ColorTextoOscuro,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium
@@ -202,10 +232,12 @@ fun DetallePagoScreen(
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
+
                     HorizontalDivider(color = FondoPantallaClaro)
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Monto total.
+                    // Monto dinámico
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -218,28 +250,21 @@ fun DetallePagoScreen(
                             fontWeight = FontWeight.Medium
                         )
 
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = "$125,000",
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ColorTextoOscuro
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "CLP",
-                                fontSize = 12.sp,
-                                color = ColorGrisTexto,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Text(
+                            text = montoFormateado,
+                            color = ColorTextoOscuro,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // MODIFICADO: la sección presenta un solo método; ya no pide seleccionar.
+            // Medio de pago
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -251,6 +276,7 @@ fun DetallePagoScreen(
                     fontWeight = FontWeight.Bold,
                     color = ColorTextoOscuro
                 )
+
                 Text(
                     text = "Método registrado",
                     fontSize = 12.sp,
@@ -260,7 +286,7 @@ fun DetallePagoScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // MODIFICADO: Visa como único método; se quitó Cuenta Corriente.
+            // Tarjeta de pago
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
@@ -283,24 +309,32 @@ fun DetallePagoScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("💳", fontSize = 20.sp)
+                        Text(
+                            text = "💳",
+                            fontSize = 20.sp
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(14.dp))
 
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
                             text = "Tarjeta de Crédito",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = Color.White
                         )
+
                         Text(
                             text = "•••• 4582 • Visa",
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.7f)
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Text(
                         text = "Principal",
@@ -311,7 +345,7 @@ fun DetallePagoScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

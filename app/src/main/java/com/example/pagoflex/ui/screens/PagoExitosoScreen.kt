@@ -1,7 +1,5 @@
 package com.example.pagoflex.ui.screens
 
-
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.NumberFormat
+import java.util.Locale
 
 private val ColorFondoClaro = Color(0xFFF8FAFC)
 private val VerdeAccento = Color(0xFFD4ED91)
@@ -26,9 +26,27 @@ private val GrisTexto = Color(0xFF64748B)
 @Composable
 fun PagoExitosoScreen(
     onVolverInicio: () -> Unit,
-    onVerHistorial: () -> Unit
+    onVerHistorial: () -> Unit,
+    concepto: String = "",
+    empresa: String = "",
+    monto: Double = 0.0,
+    comprobante: String = ""
 ) {
     val scrollState = rememberScrollState()
+    val montoFormateado = NumberFormat
+        .getCurrencyInstance(Locale("es", "CL"))
+        .format(monto)
+    val tituloPago = when {
+        empresa.isNotBlank() && concepto.isNotBlank() -> "$empresa - $concepto"
+        empresa.isNotBlank() -> empresa
+        concepto.isNotBlank() -> concepto
+        else -> "Pago registrado"
+    }
+    val codigoOp = if (comprobante.isNotBlank()) {
+        comprobante
+    } else {
+        "PF-${System.currentTimeMillis() % 1000000}"
+    }
 
     Scaffold(
         bottomBar = {
@@ -52,7 +70,11 @@ fun PagoExitosoScreen(
                             contentColor = AzulOscuro
                         )
                     ) {
-                        Text("Volver al inicio", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Volver al inicio",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(modifier = Modifier.weight(1f))
                         Text("➔", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -82,7 +104,6 @@ fun PagoExitosoScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Icono de éxito con círculos concéntricos
             Box(
                 modifier = Modifier
                     .size(90.dp)
@@ -95,7 +116,12 @@ fun PagoExitosoScreen(
                         .background(VerdeAccento, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("✓", fontSize = 32.sp, color = AzulOscuro, fontWeight = FontWeight.Bold)
+                    Text(
+                        "✓",
+                        fontSize = 32.sp,
+                        color = AzulOscuro,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -125,7 +151,6 @@ fun PagoExitosoScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Tarjeta de detalles del pago
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -144,8 +169,18 @@ fun PagoExitosoScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("PAGASTE A", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = GrisTexto)
-                            Text("Cuenta de Agua - Consumo Mensual", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AzulOscuro)
+                            Text(
+                                "PAGASTE A",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = GrisTexto
+                            )
+                            Text(
+                                tituloPago,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AzulOscuro
+                            )
                         }
                     }
 
@@ -153,15 +188,30 @@ fun PagoExitosoScreen(
                     HorizontalDivider(color = Color(0xFFF1F5F9))
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("TOTAL PAGADO", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = GrisTexto)
+                    Text(
+                        "TOTAL PAGADO",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GrisTexto
+                    )
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        Text("$125,000", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = AzulOscuro)
-                        Text("CLP", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = GrisTexto)
+                        Text(
+                            montoFormateado,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AzulOscuro
+                        )
+                        Text(
+                            "CLP",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GrisTexto
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -172,32 +222,55 @@ fun PagoExitosoScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("10 Oct, 2025 • 09:41", fontSize = 11.sp, color = GrisTexto)
-                        Text("Operación #PF-847291", fontSize = 11.sp, color = GrisTexto, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Pago procesado",
+                            fontSize = 11.sp,
+                            color = GrisTexto
+                        )
+                        Text(
+                            "Operación #$codigoOp",
+                            fontSize = 11.sp,
+                            color = GrisTexto,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Tarjeta verde de racha avanzada
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = VerdeAccento)
             ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text("📈", fontSize = 24.sp)
                     Spacer(modifier = Modifier.width(14.dp))
                     Column {
-                        Text("RACHA DE PAGOS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AzulOscuro.copy(alpha = 0.7f))
-                        Text("¡Llevas 4 meses en racha pagando!", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AzulOscuro)
-                        Text("Sigue así y mantén tus pagos al día.", fontSize = 12.sp, color = AzulOscuro.copy(alpha = 0.8f))
+                        Text(
+                            "RACHA DE PAGOS",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AzulOscuro.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            "¡Llevas 4 meses en racha pagando!",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AzulOscuro
+                        )
+                        Text(
+                            "Sigue así y mantén tus pagos al día.",
+                            fontSize = 12.sp,
+                            color = AzulOscuro.copy(alpha = 0.85f)
+                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
