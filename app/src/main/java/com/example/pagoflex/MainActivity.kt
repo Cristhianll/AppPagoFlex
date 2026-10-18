@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
                 var seccionPerfilActual by remember { mutableStateOf("cuenta") }
                 var verPerfilDetalle by remember { mutableStateOf(false) }
                 var refrescarDatos by remember { mutableIntStateOf(0) }
+                var deudaSeleccionadaId by remember { mutableStateOf<String?>(null) }
 
                 LaunchedEffect(uiState.registroExitoso, modo) {
                     if (modo == "registro" && uiState.registroExitoso) {
@@ -148,12 +149,12 @@ class MainActivity : ComponentActivity() {
                         val pagosUsuario = remember(usuarioId, refrescarDatos) {
                             db.listarPagos(usuarioId)
                         }
-                        val tieneDeudaPendiente = deudasUsuario.any {
+                        val deudasPendientes = deudasUsuario.filter {
                             it["estado"] == "PENDIENTE"
                         }
-                        val deudaPendiente = deudasUsuario.firstOrNull {
-                            it["estado"] == "PENDIENTE"
-                        }
+                        val deudaPendiente = deudasPendientes.firstOrNull {
+                            it["id"] == deudaSeleccionadaId
+                        } ?: deudasPendientes.firstOrNull()
 
                         if (verPerfilDetalle) {
                             DetallePerfilScreen(
@@ -191,11 +192,12 @@ class MainActivity : ComponentActivity() {
                                 "detallePago" -> {
                                     if (deudaPendiente == null) {
                                         LaunchedEffect(Unit) {
-                                            pantallaActual = "inicio"
+                                            pantallaActual = "historial"
                                         }
                                     } else {
                                         DetallePagoScreen(
                                             onVolverAtras = {
+                                                deudaSeleccionadaId = null
                                                 pantallaActual = "inicio"
                                             },
                                             onConfirmarPago = {
@@ -205,6 +207,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 if (ok) {
                                                     pagoViewModel.confirmarPago()
+                                                    deudaSeleccionadaId = null
                                                     refrescarDatos++
                                                     pantallaActual = "pagoExitoso"
                                                 }
@@ -249,24 +252,18 @@ class MainActivity : ComponentActivity() {
                                 else -> {
                                     DashboardScreen(
                                         nombreUsuario = usuario["nombre"].orEmpty(),
-                                        deudaPendiente = tieneDeudaPendiente,
-                                        conceptoDeuda = deudaPendiente
-                                            ?.get("concepto").orEmpty(),
-                                        empresaDeuda = deudaPendiente
-                                            ?.get("empresa").orEmpty(),
-                                        montoDeuda = deudaPendiente
-                                            ?.get("monto")
-                                            ?.toDoubleOrNull() ?: 0.0,
-                                        vencimientoDeuda = deudaPendiente
-                                            ?.get("vencimiento").orEmpty(),
-                                        onIrADetallePago = {
-                                            if (tieneDeudaPendiente) {
-                                                pantallaActual = "detallePago"
-                                            }
+                                        deudasPendientes = deudasPendientes,
+                                        onPagarDeuda = { idDeuda ->
+                                            deudaSeleccionadaId = idDeuda
+                                            pantallaActual = "detallePago"
                                         },
                                         onIrAPagos = {
-                                            if (tieneDeudaPendiente) {
+                                            if (deudasPendientes.isNotEmpty()) {
+                                                deudaSeleccionadaId =
+                                                    deudasPendientes.first()["id"]
                                                 pantallaActual = "detallePago"
+                                            } else {
+                                                pantallaActual = "historial"
                                             }
                                         },
                                         onIrAHistorial = {
