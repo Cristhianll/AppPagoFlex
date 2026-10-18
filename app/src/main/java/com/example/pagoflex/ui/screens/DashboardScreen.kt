@@ -12,7 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import java.text.NumberFormat
+import java.util.Locale
 
 private val DashAzulFondo = Color(0xFF001F3F)
 private val DashVerdeAccento = Color(0xFFD4ED91)
@@ -21,22 +22,25 @@ private val DashGrisClaro = Color(0xFF64748B)
 private val DashTextoPrincipal = Color(0xFF0F172A)
 private val DashFondoBlanca = Color(0xFFF8FAFC)
 
-/**
- * PANTALLA: DashboardScreen adaptada con los componentes institucionales del profesor.
- */
 @Composable
 fun DashboardScreen(
     nombreUsuario: String,
     deudaPendiente: Boolean,
+    conceptoDeuda: String = "",
+    empresaDeuda: String = "",
+    montoDeuda: Double = 0.0,
+    vencimientoDeuda: String = "",
     onIrADetallePago: () -> Unit,
     onIrAPagos: () -> Unit,
     onIrAHistorial: () -> Unit,
     onSeleccionarOpcionPerfil: (String) -> Unit
 ) {
     val scrollState = rememberScrollState()
-
-    // Estado para controlar el mini menú desplegable del perfil
     var menuExpandido by remember { mutableStateOf(false) }
+
+    val montoFormateado = NumberFormat
+        .getCurrencyInstance(Locale("es", "CL"))
+        .format(montoDeuda)
 
     Scaffold(
         bottomBar = {
@@ -75,7 +79,6 @@ fun DashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- CABECERA CON COMPONENTES DE PERFIL Y LOGO ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -85,7 +88,10 @@ fun DashboardScreen(
                     Box(
                         modifier = Modifier
                             .size(38.dp)
-                            .background(DashVerdeAccento, androidx.compose.foundation.shape.RoundedCornerShape(10.dp)),
+                            .background(
+                                DashVerdeAccento,
+                                androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -105,53 +111,59 @@ fun DashboardScreen(
                     )
                 }
 
-                // Utilizando el componente AvatarCircular provisto en los componentes del profesor
                 Box {
-                    // Si el profesor estructuró AvatarCircular para recibir texto o imagen:
-                    Box(
-                        modifier = Modifier.size(40.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        IconButton(onClick = { menuExpandido = true }) {
-                            Surface(
-                                shape = androidx.compose.foundation.shape.CircleShape,
-                                color = DashVerdeAccento,
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = if (nombreUsuario.isNotBlank()) nombreUsuario.take(1).uppercase() else "M",
-                                        color = DashAzulFondo,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp
-                                    )
-                                }
+                    IconButton(onClick = { menuExpandido = true }) {
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = DashVerdeAccento,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = if (nombreUsuario.isNotBlank()) {
+                                        nombreUsuario.take(1).uppercase()
+                                    } else {
+                                        "U"
+                                    },
+                                    color = DashAzulFondo,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
                             }
                         }
                     }
 
-                    // Mini Menú Desplegable con las opciones del sistema
                     DropdownMenu(
                         expanded = menuExpandido,
                         onDismissRequest = { menuExpandido = false },
                         modifier = Modifier.background(Color.White)
                     ) {
                         DropdownMenuItem(
-                            text = { Text("👤 Mi Cuenta y Datos", fontWeight = FontWeight.Bold, color = DashTextoPrincipal) },
+                            text = {
+                                Text(
+                                    "👤 Mi Cuenta y Datos",
+                                    fontWeight = FontWeight.Bold,
+                                    color = DashTextoPrincipal
+                                )
+                            },
                             onClick = {
                                 menuExpandido = false
                                 onSeleccionarOpcionPerfil("cuenta")
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("💳 Mis Tarjetas", color = DashTextoPrincipal) },
+                            text = {
+                                Text("💳 Mis Tarjetas", color = DashTextoPrincipal)
+                            },
                             onClick = {
                                 menuExpandido = false
                                 onSeleccionarOpcionPerfil("tarjetas")
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("⚙️ Configuración", color = DashTextoPrincipal) },
+                            text = {
+                                Text("⚙️ Configuración", color = DashTextoPrincipal)
+                            },
                             onClick = {
                                 menuExpandido = false
                                 onSeleccionarOpcionPerfil("configuracion")
@@ -159,7 +171,13 @@ fun DashboardScreen(
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
-                            text = { Text("🚪 Cerrar Sesión", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) },
+                            text = {
+                                Text(
+                                    "🚪 Cerrar Sesión",
+                                    color = Color(0xFFEF4444),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
                             onClick = {
                                 menuExpandido = false
                                 onSeleccionarOpcionPerfil("salir")
@@ -171,7 +189,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- SALUDO ---
             Text(
                 text = "BUENOS DÍAS",
                 color = DashVerdeAccento,
@@ -181,7 +198,7 @@ fun DashboardScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "¡Hola, ${if (nombreUsuario.isBlank()) "Martina" else nombreUsuario}!",
+                text = "¡Hola, ${nombreUsuario.ifBlank { "Usuario" }}!",
                 color = Color.White,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
@@ -195,8 +212,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- TARJETA DE PRÓXIMO VENCIMIENTO (Utilizando estructura de TarjetaSeccion) ---
-            if(deudaPendiente) {
+            if (deudaPendiente && montoDeuda > 0) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
@@ -225,7 +241,7 @@ fun DashboardScreen(
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Text(
-                                    " 5 días",
+                                    "Pendiente",
                                     color = Color.White,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
@@ -250,12 +266,25 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
                                 Text(
-                                    "Inmobiliaria del Parque",
+                                    empresaDeuda.ifBlank { conceptoDeuda },
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
                                     color = DashTextoPrincipal
                                 )
-                                Text("📅 Vence 15 Oct", color = DashGrisClaro, fontSize = 14.sp)
+                                Text(
+                                    "📅 Vence $vencimientoDeuda",
+                                    color = DashGrisClaro,
+                                    fontSize = 14.sp
+                                )
+                                if (conceptoDeuda.isNotBlank() &&
+                                    conceptoDeuda != empresaDeuda
+                                ) {
+                                    Text(
+                                        conceptoDeuda,
+                                        color = DashGrisClaro,
+                                        fontSize = 13.sp
+                                    )
+                                }
                             }
                         }
 
@@ -276,7 +305,7 @@ fun DashboardScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "$125,000",
+                                montoFormateado,
                                 fontSize = 34.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DashTextoPrincipal
@@ -291,33 +320,67 @@ fun DashboardScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Reemplazando el botón estándar por BotonPrincipal si está disponible en tus componentes
                         Button(
                             onClick = onIrADetallePago,
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = DashVerdeAccento,
                                 contentColor = DashAzulFondo
                             )
                         ) {
-                            Text("Pagar ahora", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Pagar ahora",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                             Spacer(modifier = Modifier.weight(1f))
                             Text("➔", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
+                    }
+                }
+            } else {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("✅", fontSize = 36.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "¡Todo al día!",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = DashTextoPrincipal
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            "No tienes deudas pendientes por pagar.",
+                            color = DashGrisClaro,
+                            fontSize = 14.sp
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- TARJETA DE RACHA DE PAGOS (Compatible con TarjetaEstadistica) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = DashVerdeAccento)
             ) {
-                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
                     Text("📈", fontSize = 28.sp)
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {

@@ -79,13 +79,13 @@ fun PerfilUserScreen(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = if (nombreUsuario.isBlank()) "Martina" else nombreUsuario,
+                    text = if (nombreUsuario.isBlank()) "Emilia" else nombreUsuario,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextoOscuro
                 )
                 Text(
-                    text = "martina.cliente@pagoflex.cl",
+                    text = "Emilia.cliente@pagoflex.cl",
                     fontSize = 13.sp,
                     color = GrisTexto
                 )

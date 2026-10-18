@@ -1,136 +1,290 @@
-
 package com.example.pagoflex
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.pagoflex.data.PagoFlexDbHelper
+import com.example.pagoflex.ui.screens.DashboardScreen
+import com.example.pagoflex.ui.screens.DetallePagoScreen
+import com.example.pagoflex.ui.screens.DetallePerfilScreen
+import com.example.pagoflex.ui.screens.FormularioScreen
+import com.example.pagoflex.ui.screens.HistorialScreen
+import com.example.pagoflex.ui.screens.PagoExitosoScreen
 import com.example.pagoflex.ui.theme.PagoFlexTheme
+import com.example.pagoflex.viewmodel.FormularioViewModel
+import com.example.pagoflex.viewmodel.PagoViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: FormularioViewModel by viewModels()
+    private val pagoViewModel: PagoViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val db = PagoFlexDbHelper(applicationContext)
 
         setContent {
             PagoFlexTheme {
-                AppPagoFlex(db)
-            }
-        }
-    }
-}
+                val uiState by viewModel.uiState.collectAsState()
+                val pagoUiState by pagoViewModel.uiState.collectAsState()
 
-private fun pesos(valor: String): String {
-    val numero = valor.toDoubleOrNull() ?: 0.0
-    return NumberFormat.getCurrencyInstance(
-        Locale("es", "CL")
-    ).format(numero)
-}
-
-@Composable
-private fun AppPagoFlex(db: PagoFlexDbHelper) {
-    var sesion by remember { mutableStateOf<Map<String, String>?>(null) }
-    var pantalla by remember { mutableStateOf("login") }
-    var mensaje by remember { mutableStateOf("") }
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        when (pantalla) {
-            "login" -> LoginScreen(
-                mensaje = mensaje,
-                onIngresar = { correo, clave ->
-                    val usuario = db.iniciarSesion(correo, clave)
-                    if (usuario == null) {
-                        mensaje = "Correo o contraseña incorrectos."
-                    } else {
-                        sesion = usuario
-                        mensaje = ""
-                        pantalla = if (usuario["rol"] == "ADMIN") {
-                            "admin"
-                        } else {
-                            "usuario"
-                        }
-                    }
-                },
-                onRegistro = { pantalla = "registro"; mensaje = "" }
-            )
-
-            "registro" -> RegistroScreen(
-                mensaje = mensaje,
-                onRegistrar = { nombre, correo, clave, repetir ->
-                    when {
-                        nombre.trim().length < 3 ->
-                            mensaje = "Ingresa un nombre de al menos 3 caracteres."
-                        !android.util.Patterns.EMAIL_ADDRESS
-                            .matcher(correo.trim()).matches() ->
-                            mensaje = "Ingresa un correo válido."
-                        clave.length < 8 ||
-                                !clave.any { it.isUpperCase() } ||
-                                !clave.any { it.isLowerCase() } ||
-                                !clave.any { it.isDigit() } ||
-                                clave.all { it.isLetterOrDigit() } ->
-                            mensaje = "Usa 8 caracteres, mayúscula, minúscula, número y símbolo."
-                        clave != repetir ->
-                            mensaje = "Las contraseñas no coinciden."
-                        db.registrarUsuario(nombre, correo, clave) -> {
-                            mensaje = "Cuenta creada. Ya puedes iniciar sesión."
-                            pantalla = "login"
-                        }
-                        else -> mensaje = "No se pudo crear la cuenta. Revisa si el correo ya existe."
-                    }
-                },
-                onVolver = { pantalla = "login"; mensaje = "" }
-            )
-
-            "admin" -> {
-                val admin = sesion
-                if (admin == null || admin["rol"] != "ADMIN") {
-                    pantalla = "login"
-                } else {
-                    AdminScreen(
-                        db = db,
-                        nombre = admin["nombre"].orEmpty(),
-                        mensaje = mensaje,
-                        onMensaje = { mensaje = it },
-                        onSalir = {
-                            sesion = null
-                            pantalla = "login"
-                            mensaje = ""
-                        }
-                    )
+                var modo by remember { mutableStateOf("login") }
+                var sesion by remember {
+                    mutableStateOf<Map<String, String>?>(null)
                 }
-            }
+                var correo by remember { mutableStateOf("") }
+                var clave by remember { mutableStateOf("") }
+                var mensaje by remember { mutableStateOf("") }
 
-            "usuario" -> {
-                val usuario = sesion
-                if (usuario == null || usuario["rol"] != "USUARIO") {
-                    pantalla = "login"
-                } else {
-                    UsuarioScreen(
-                        db = db,
-                        usuarioId = usuario["id"]!!.toInt(),
-                        nombre = usuario["nombre"].orEmpty(),
-                        onSalir = {
-                            sesion = null
-                            pantalla = "login"
-                            mensaje = ""
+                var pantallaActual by remember { mutableStateOf("inicio") }
+                var seccionPerfilActual by remember { mutableStateOf("cuenta") }
+                var verPerfilDetalle by remember { mutableStateOf(false) }
+                var refrescarDatos by remember { mutableIntStateOf(0) }
+
+                LaunchedEffect(uiState.registroExitoso, modo) {
+                    if (modo == "registro" && uiState.registroExitoso) {
+                        val creado = db.registrarUsuario(
+                            uiState.nombre,
+                            uiState.correo,
+                            uiState.contrasena
+                        )
+
+                        mensaje = if (creado) {
+                            "Cuenta creada. Ahora inicia sesión."
+                        } else {
+                            "Ese correo ya está registrado. Usa otro correo."
                         }
-                    )
+
+                        viewModel.onLimpiar()
+                        modo = "login"
+                    }
+                }
+
+                when {
+                    sesion == null && modo == "registro" -> {
+                        Box(Modifier.fillMaxSize()) {
+                            FormularioScreen(viewModel = viewModel)
+
+                            TextButton(
+                                onClick = {
+                                    viewModel.onLimpiar()
+                                    modo = "login"
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(12.dp)
+                            ) {
+                                Text("← Volver al inicio")
+                            }
+                        }
+                    }
+
+                    sesion == null -> {
+                        LoginScreen(
+                            correo = correo,
+                            clave = clave,
+                            mensaje = mensaje,
+                            onCorreo = { correo = it },
+                            onClave = { clave = it },
+                            onEntrar = {
+                                val resultado = db.iniciarSesion(correo, clave)
+
+                                if (resultado == null) {
+                                    mensaje = "Correo o contraseña incorrectos."
+                                } else {
+                                    sesion = resultado
+                                    mensaje = ""
+                                    pantallaActual = "inicio"
+                                    refrescarDatos++
+                                }
+                            },
+                            onRegistro = {
+                                mensaje = ""
+                                viewModel.onLimpiar()
+                                modo = "registro"
+                            }
+                        )
+                    }
+
+                    sesion?.get("rol") == "ADMIN" -> {
+                        AdminScreen(
+                            db = db,
+                            admin = sesion!!,
+                            onSalir = {
+                                sesion = null
+                                correo = ""
+                                clave = ""
+                                mensaje = ""
+                                pantallaActual = "inicio"
+                            }
+                        )
+                    }
+
+                    else -> {
+                        val usuario = sesion!!
+                        val usuarioId = usuario["id"]!!.toInt()
+
+                        val deudasUsuario = remember(usuarioId, refrescarDatos) {
+                            db.listarDeudas(usuarioId)
+                        }
+                        val pagosUsuario = remember(usuarioId, refrescarDatos) {
+                            db.listarPagos(usuarioId)
+                        }
+                        val tieneDeudaPendiente = deudasUsuario.any {
+                            it["estado"] == "PENDIENTE"
+                        }
+                        val deudaPendiente = deudasUsuario.firstOrNull {
+                            it["estado"] == "PENDIENTE"
+                        }
+
+                        if (verPerfilDetalle) {
+                            DetallePerfilScreen(
+                                nombreUsuario = usuario["nombre"].orEmpty(),
+                                correoUsuario = usuario["correo"].orEmpty(),
+                                ultimosDigitosVisa = pagoUiState.ultimosDigitosVisa,
+                                tarjetaPrincipal = pagoUiState.tarjetaPrincipal,
+                                notificacionesActivas = pagoUiState.notificacionesActivas,
+                                modoOscuroAutomatico = pagoUiState.modoOscuroAutomatico,
+                                biometriaActiva = pagoUiState.biometriaActiva,
+                                seccionInicial = seccionPerfilActual,
+                                onVolver = {
+                                    verPerfilDetalle = false
+                                },
+                                onCerrarSesion = {
+                                    verPerfilDetalle = false
+                                    sesion = null
+                                    viewModel.onLimpiar()
+                                },
+                                onVincularTarjeta = { digitos ->
+                                    pagoViewModel.vincularTarjeta(digitos)
+                                },
+                                onAlternarNotificaciones = {
+                                    pagoViewModel.alternarNotificaciones()
+                                },
+                                onAlternarModoOscuro = {
+                                    pagoViewModel.alternarModoOscuro()
+                                },
+                                onAlternarBiometria = {
+                                    pagoViewModel.alternarBiometria()
+                                }
+                            )
+                        } else {
+                            when (pantallaActual) {
+                                "detallePago" -> {
+                                    if (deudaPendiente == null) {
+                                        LaunchedEffect(Unit) {
+                                            pantallaActual = "inicio"
+                                        }
+                                    } else {
+                                        DetallePagoScreen(
+                                            onVolverAtras = {
+                                                pantallaActual = "inicio"
+                                            },
+                                            onConfirmarPago = {
+                                                val ok = db.pagarDeuda(
+                                                    deudaPendiente["id"]!!.toInt(),
+                                                    usuarioId
+                                                )
+                                                if (ok) {
+                                                    pagoViewModel.confirmarPago()
+                                                    refrescarDatos++
+                                                    pantallaActual = "pagoExitoso"
+                                                }
+                                            },
+                                            empresa = deudaPendiente["empresa"].orEmpty(),
+                                            concepto = deudaPendiente["concepto"].orEmpty(),
+                                            monto = deudaPendiente["monto"]
+                                                ?.toDoubleOrNull() ?: 0.0
+                                        )
+                                    }
+                                }
+
+                                "pagoExitoso" -> {
+                                    val ultimoPago = pagosUsuario.firstOrNull()
+                                    PagoExitosoScreen(
+                                        onVolverInicio = {
+                                            pantallaActual = "inicio"
+                                        },
+                                        onVerHistorial = {
+                                            pantallaActual = "historial"
+                                        },
+                                        concepto = ultimoPago?.get("concepto").orEmpty(),
+                                        empresa = "",
+                                        monto = ultimoPago?.get("monto")
+                                            ?.toDoubleOrNull() ?: 0.0,
+                                        comprobante = ultimoPago?.get("comprobante").orEmpty()
+                                    )
+                                }
+
+                                "historial" -> {
+                                    HistorialScreen(
+                                        onVolverInicio = {
+                                            pantallaActual = "inicio"
+                                        },
+                                        onIrAPagos = {
+                                            pantallaActual = "detallePago"
+                                        },
+                                        pagos = pagosUsuario
+                                    )
+                                }
+
+                                else -> {
+                                    DashboardScreen(
+                                        nombreUsuario = usuario["nombre"].orEmpty(),
+                                        deudaPendiente = tieneDeudaPendiente,
+                                        conceptoDeuda = deudaPendiente
+                                            ?.get("concepto").orEmpty(),
+                                        empresaDeuda = deudaPendiente
+                                            ?.get("empresa").orEmpty(),
+                                        montoDeuda = deudaPendiente
+                                            ?.get("monto")
+                                            ?.toDoubleOrNull() ?: 0.0,
+                                        vencimientoDeuda = deudaPendiente
+                                            ?.get("vencimiento").orEmpty(),
+                                        onIrADetallePago = {
+                                            if (tieneDeudaPendiente) {
+                                                pantallaActual = "detallePago"
+                                            }
+                                        },
+                                        onIrAPagos = {
+                                            if (tieneDeudaPendiente) {
+                                                pantallaActual = "detallePago"
+                                            }
+                                        },
+                                        onIrAHistorial = {
+                                            pantallaActual = "historial"
+                                        },
+                                        onSeleccionarOpcionPerfil = { opcion ->
+                                            if (opcion == "salir") {
+                                                sesion = null
+                                                viewModel.onLimpiar()
+                                            } else {
+                                                seccionPerfilActual = opcion
+                                                verPerfilDetalle = true
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -139,380 +293,376 @@ private fun AppPagoFlex(db: PagoFlexDbHelper) {
 
 @Composable
 private fun LoginScreen(
+    correo: String,
+    clave: String,
     mensaje: String,
-    onIngresar: (String, String) -> Unit,
+    onCorreo: (String) -> Unit,
+    onClave: (String) -> Unit,
+    onEntrar: () -> Unit,
     onRegistro: () -> Unit
 ) {
-    var correo by remember { mutableStateOf("usuario@pagoflex.cl") }
-    var clave by remember { mutableStateOf("usuario123") }
+    var mostrarClave by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center
+    val azulFondo = Color(0xFF001F3F)
+    val verdeAccento = Color(0xFFD4ED91)
+    val textoSuave = Color(0xFFE2E8F0)
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = azulFondo
     ) {
-        Text("PagoFlex", style = MaterialTheme.typography.headlineLarge)
-        Text(
-            "Tus compromisos de pago, en un solo lugar",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Spacer(Modifier.height(24.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(26.dp),
+                color = verdeAccento,
+                modifier = Modifier.size(88.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "$",
+                        style = MaterialTheme.typography.displayLarge,
+                        color = azulFondo,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
-        OutlinedTextField(
-            value = correo,
-            onValueChange = { correo = it },
-            label = { Text("Correo electrónico") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = clave,
-            onValueChange = { clave = it },
-            label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+            Spacer(Modifier.height(12.dp))
 
-        if (mensaje.isNotBlank()) {
             Text(
-                mensaje,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 8.dp)
+                text = "PagoFlex",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Text(
+                text = "Tus pagos, más simples",
+                style = MaterialTheme.typography.bodyLarge,
+                color = textoSuave
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "Iniciar sesión",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = azulFondo
+                    )
+
+                    OutlinedTextField(
+                        value = correo,
+                        onValueChange = onCorreo,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Correo electrónico") },
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = clave,
+                        onValueChange = onClave,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Contraseña") },
+                        singleLine = true,
+                        visualTransformation = if (mostrarClave) {
+                            androidx.compose.ui.text.input.VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        trailingIcon = {
+                            TextButton(
+                                onClick = { mostrarClave = !mostrarClave }
+                            ) {
+                                Text(
+                                    if (mostrarClave) "Ocultar" else "Ver",
+                                    color = azulFondo
+                                )
+                            }
+                        }
+                    )
+
+                    if (mensaje.isNotBlank()) {
+                        Text(
+                            text = mensaje,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    Button(
+                        onClick = onEntrar,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = verdeAccento,
+                            contentColor = azulFondo
+                        )
+                    ) {
+                        Text("Ingresar", fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedButton(
+                        onClick = onRegistro,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = azulFondo
+                        )
+                    ) {
+                        Text("Crear cuenta", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
+
+            Text(
+                text = "Acceso de demostración",
+                fontWeight = FontWeight.SemiBold,
+                color = verdeAccento
+            )
+            Text(
+                "Admin: admin@pagoflex.cl / Admin123$",
+                color = textoSuave
+            )
+            Text(
+                text = "Los usuarios se crean con \"Crear cuenta\"",
+                style = MaterialTheme.typography.bodySmall,
+                color = textoSuave
             )
         }
-
-        Spacer(Modifier.height(12.dp))
-        Button(
-            onClick = { onIngresar(correo, clave) },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Iniciar sesión") }
-
-        OutlinedButton(
-            onClick = onRegistro,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Crear cuenta de usuario") }
-
-        Spacer(Modifier.height(20.dp))
-        Text("Cuentas de demostración", style = MaterialTheme.typography.titleMedium)
-        Text("Administrador: admin@pagoflex.cl / admin123")
-        Text("Usuario: usuario@pagoflex.cl / usuario123")
-    }
-}
-
-@Composable
-private fun RegistroScreen(
-    mensaje: String,
-    onRegistrar: (String, String, String, String) -> Unit,
-    onVolver: () -> Unit
-) {
-    var nombre by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
-    var clave by remember { mutableStateOf("") }
-    var repetir by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Crear cuenta", style = MaterialTheme.typography.headlineMedium)
-        Text("La cuenta nueva tendrá el rol de usuario.")
-
-        OutlinedTextField(
-            nombre, { nombre = it },
-            label = { Text("Nombre completo") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            correo, { correo = it },
-            label = { Text("Correo electrónico") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            clave, { clave = it },
-            label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            repetir, { repetir = it },
-            label = { Text("Repetir contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (mensaje.isNotBlank()) {
-            Text(mensaje, color = MaterialTheme.colorScheme.error)
-        }
-
-        Button(
-            onClick = { onRegistrar(nombre, correo, clave, repetir) },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Registrar") }
-
-        TextButton(onClick = onVolver) { Text("Volver al inicio de sesión") }
     }
 }
 
 @Composable
 private fun AdminScreen(
     db: PagoFlexDbHelper,
-    nombre: String,
-    mensaje: String,
-    onMensaje: (String) -> Unit,
+    admin: Map<String, String>,
     onSalir: () -> Unit
 ) {
+    var refrescar by remember { mutableIntStateOf(0) }
     var concepto by remember { mutableStateOf("") }
     var empresa by remember { mutableStateOf("") }
     var monto by remember { mutableStateOf("") }
-    var vencimiento by remember { mutableStateOf("2026-11-30") }
+    var vencimiento by remember { mutableStateOf("2026-12-31") }
     var usuarioId by remember { mutableStateOf("") }
-    var actualizar by remember { mutableIntStateOf(0) }
-    var verDeudas by remember { mutableStateOf(true) }
+    var mensaje by remember { mutableStateOf("") }
 
-    val usuarios = remember(actualizar) { db.listarUsuarios() }
-    val deudas = remember(actualizar) { db.listarDeudas() }
+    val usuarios = remember(refrescar) {
+        db.listarUsuarios()
+    }
+
+    val deudas = remember(refrescar) {
+        db.listarDeudas()
+    }
+
+    LaunchedEffect(usuarios) {
+        if (usuarioId.isBlank() && usuarios.isNotEmpty()) {
+            usuarioId = usuarios.first()["id"].orEmpty()
+        }
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Text("Panel administrador", style = MaterialTheme.typography.headlineMedium)
-        Text("Hola, $nombre")
-        Text("Crear y asignar compromisos de pago.")
-
-        HorizontalDivider()
-
-        Text("Nueva deuda", style = MaterialTheme.typography.titleLarge)
-
-        OutlinedTextField(
-            concepto, { concepto = it },
-            label = { Text("Concepto de la deuda") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            empresa, { empresa = it },
-            label = { Text("Empresa asociada") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            monto, { monto = it },
-            label = { Text("Monto en pesos chilenos") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            vencimiento, { vencimiento = it },
-            label = { Text("Vencimiento (AAAA-MM-DD)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Text("Selecciona el usuario destinatario:")
-        usuarios.forEach { usuario ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(usuario["nombre"].orEmpty())
-                    Text(
-                        usuario["correo"].orEmpty(),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                RadioButton(
-                    selected = usuarioId == usuario["id"],
-                    onClick = { usuarioId = usuario["id"].orEmpty() }
-                )
-            }
-        }
-
-        Button(
-            onClick = {
-                val cantidad = monto.trim().replace(",", ".").toDoubleOrNull()
-                val fechaValida = runCatching {
-                    java.time.LocalDate.parse(vencimiento)
-                }.isSuccess
-
-                when {
-                    concepto.isBlank() || empresa.isBlank() ->
-                        onMensaje("Completa el concepto y la empresa.")
-                    cantidad == null || !cantidad.isFinite() || cantidad <= 0 ->
-                        onMensaje("El monto debe ser mayor que cero.")
-                    !fechaValida ->
-                        onMensaje("La fecha debe tener formato AAAA-MM-DD.")
-                    usuarioId.toIntOrNull() == null ->
-                        onMensaje("Selecciona un usuario.")
-                    db.crearDeuda(
-                        usuarioId.toInt(),
-                        concepto,
-                        empresa,
-                        cantidad,
-                        vencimiento
-                    ) -> {
-                        concepto = ""
-                        empresa = ""
-                        monto = ""
-                        onMensaje("Deuda creada y asignada correctamente.")
-                        actualizar++
-                    }
-                    else -> onMensaje("No se pudo guardar la deuda.")
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Crear deuda") }
-
-        if (mensaje.isNotBlank()) {
-            Text(mensaje, color = MaterialTheme.colorScheme.primary)
-        }
-
-        HorizontalDivider()
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Deudas registradas", style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = { verDeudas = !verDeudas }) {
-                Text(if (verDeudas) "Ocultar" else "Mostrar")
-            }
-        }
-
-        AnimatedVisibility(visible = verDeudas) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (deudas.isEmpty()) Text("Todavía no hay deudas.")
-                deudas.forEach { deuda ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp)) {
-                            Text(
-                                deuda["concepto"].orEmpty(),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text("Usuario: ${deuda["nombreUsuario"]}")
-                            Text("Empresa: ${deuda["empresa"]}")
-                            Text("Monto: ${pesos(deuda["monto"].orEmpty())}")
-                            Text("Vence: ${deuda["vencimiento"]}")
-                            Text("Estado: ${deuda["estado"]}")
-                        }
-                    }
-                }
-            }
-        }
-
-        OutlinedButton(
-            onClick = onSalir,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Cerrar sesión") }
-    }
-}
-
-@Composable
-private fun UsuarioScreen(
-    db: PagoFlexDbHelper,
-    usuarioId: Int,
-    nombre: String,
-    onSalir: () -> Unit
-) {
-    var actualizar by remember { mutableIntStateOf(0) }
-    var mostrarHistorial by remember { mutableStateOf(false) }
-
-    val deudas = remember(usuarioId, actualizar) {
-        db.listarDeudas(usuarioId)
-    }
-    val pagos = remember(usuarioId, actualizar) {
-        db.listarPagos(usuarioId)
-    }
-    val pendientes = deudas.filter { it["estado"] == "PENDIENTE" }
-    val total = pendientes.sumOf { it["monto"]?.toDoubleOrNull() ?: 0.0 }
-
-    Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Hola, $nombre", style = MaterialTheme.typography.headlineMedium)
-        Text("Tu resumen de pagos")
+        Text(
+            text = "Panel administrador",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
 
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(18.dp)) {
-                Text("Total pendiente")
+        Text("Bienvenido, ${admin["nombre"].orEmpty()}")
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
-                    pesos(total.toString()),
-                    style = MaterialTheme.typography.headlineMedium
+                    text = "Crear deuda",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
-                Text("${pendientes.size} compromiso(s) pendiente(s)")
-            }
-        }
 
-        Text("Mis compromisos", style = MaterialTheme.typography.titleLarge)
+                OutlinedTextField(
+                    value = concepto,
+                    onValueChange = { concepto = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Concepto") },
+                    singleLine = true
+                )
 
-        if (deudas.isEmpty()) {
-            Text("No tienes deudas asignadas.")
-        }
+                OutlinedTextField(
+                    value = empresa,
+                    onValueChange = { empresa = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Empresa / servicio") },
+                    singleLine = true
+                )
 
-        deudas.forEach { deuda ->
-            Card(Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
+                OutlinedTextField(
+                    value = monto,
+                    onValueChange = { monto = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Monto en pesos") },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = vencimiento,
+                    onValueChange = { vencimiento = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Vencimiento (AAAA-MM-DD)") },
+                    singleLine = true
+                )
+
+                Text(
+                    text = "Asignar a usuario",
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                if (usuarios.isEmpty()) {
                     Text(
-                        deuda["concepto"].orEmpty(),
-                        style = MaterialTheme.typography.titleMedium
+                        text = "No hay usuarios. Crea una cuenta desde el login.",
+                        color = MaterialTheme.colorScheme.error
                     )
-                    Text("Empresa: ${deuda["empresa"]}")
-                    Text("Monto: ${pesos(deuda["monto"].orEmpty())}")
-                    Text("Vencimiento: ${deuda["vencimiento"]}")
-                    Text("Estado: ${deuda["estado"]}")
-
-                    if (deuda["estado"] == "PENDIENTE") {
-                        Button(
-                            onClick = {
-                                if (db.pagarDeuda(
-                                        deuda["id"]!!.toInt(), usuarioId
-                                    )) {
-                                    actualizar++
+                } else {
+                    usuarios.forEach { usuario ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = usuarioId == usuario["id"],
+                                onClick = {
+                                    usuarioId = usuario["id"].orEmpty()
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Pagar ahora") }
+                            )
+                            Text("${usuario["nombre"]} (${usuario["correo"]})")
+                        }
                     }
                 }
+
+                if (mensaje.isNotBlank()) {
+                    Text(
+                        text = mensaje,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        val valor = monto
+                            .replace(".", "")
+                            .replace(",", ".")
+                            .toDoubleOrNull()
+
+                        mensaje = when {
+                            concepto.isBlank() || empresa.isBlank() ->
+                                "Completa concepto y empresa."
+
+                            valor == null || valor <= 0 ->
+                                "Ingresa un monto válido."
+
+                            !Regex("\\d{4}-\\d{2}-\\d{2}")
+                                .matches(vencimiento) ->
+                                "Usa fecha AAAA-MM-DD."
+
+                            usuarioId.isBlank() ->
+                                "Registra un usuario antes de crear deudas."
+
+                            db.crearDeuda(
+                                usuarioId.toInt(),
+                                concepto,
+                                empresa,
+                                valor,
+                                vencimiento
+                            ) -> {
+                                concepto = ""
+                                empresa = ""
+                                monto = ""
+                                refrescar++
+                                "Deuda creada correctamente."
+                            }
+
+                            else -> "No se pudo crear la deuda."
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Guardar deuda")
+                }
             }
         }
 
-        OutlinedButton(
-            onClick = { mostrarHistorial = !mostrarHistorial },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (mostrarHistorial) "Ocultar historial" else "Ver historial de pagos")
-        }
+        Text(
+            text = "Deudas registradas",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
 
-        AnimatedVisibility(mostrarHistorial) {
+        AnimatedVisibility(visible = deudas.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (pagos.isEmpty()) {
-                    Text("Todavía no tienes pagos registrados.")
-                }
-                pagos.forEach { pago ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text(pago["concepto"].orEmpty())
-                            Text("Pagado: ${pesos(pago["monto"].orEmpty())}")
-                            Text("Fecha: ${pago["fecha"]}")
-                            Text("Comprobante: ${pago["comprobante"]}")
+                deudas.forEach { deuda ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(
+                                text = deuda["concepto"].orEmpty(),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Usuario: ${deuda["nombreUsuario"].orEmpty()} · " +
+                                        deuda["empresa"].orEmpty()
+                            )
+
+                            val formato = NumberFormat.getCurrencyInstance(
+                                Locale("es", "CL")
+                            )
+                            val montoDeuda =
+                                deuda["monto"]?.toDoubleOrNull() ?: 0.0
+
+                            Text(
+                                "${formato.format(montoDeuda)} · " +
+                                        "Vence ${deuda["vencimiento"].orEmpty()}"
+                            )
+                            Text("Estado: ${deuda["estado"].orEmpty()}")
                         }
                     }
                 }
             }
         }
 
-        OutlinedButton(
+        if (deudas.isEmpty()) {
+            Text("Aún no hay deudas creadas.")
+        }
+
+        Button(
             onClick = onSalir,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Cerrar sesión") }
+        ) {
+            Text("Cerrar sesión")
+        }
     }
 }

@@ -1,4 +1,3 @@
-
 package com.example.pagoflex.data
 
 import android.content.ContentValues
@@ -8,10 +7,11 @@ import android.database.sqlite.SQLiteOpenHelper
 import java.security.MessageDigest
 
 class PagoFlexDbHelper(context: Context) :
-    SQLiteOpenHelper(context, "pagoflex.db", null, 1) {
+    SQLiteOpenHelper(context, "pagoflex.db", null, 2) {
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nombre TEXT NOT NULL,
@@ -19,9 +19,11 @@ class PagoFlexDbHelper(context: Context) :
                 clave_hash TEXT NOT NULL,
                 rol TEXT NOT NULL CHECK(rol IN ('ADMIN', 'USUARIO'))
             )
-        """.trimIndent())
+            """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE deudas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 usuario_id INTEGER NOT NULL,
@@ -33,9 +35,11 @@ class PagoFlexDbHelper(context: Context) :
                 creada_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
-        """.trimIndent())
+            """.trimIndent()
+        )
 
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE pagos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 deuda_id INTEGER NOT NULL,
@@ -44,27 +48,17 @@ class PagoFlexDbHelper(context: Context) :
                 comprobante TEXT NOT NULL,
                 FOREIGN KEY(deuda_id) REFERENCES deudas(id)
             )
-        """.trimIndent())
-
-        insertarUsuario(
-            db, "Administrador Demo",
-            "admin@pagoflex.cl", "Admin123$", "ADMIN"
-        )
-        insertarUsuario(
-            db, "Usuario Demo",
-            "emilia@pagoflex.cl", "Emilia123$", "USUARIO"
+            """.trimIndent()
         )
 
-        // Deuda ficticia inicial para probar el panel del usuario.
-        val deuda = ContentValues().apply {
-            put("usuario_id", 2)
-            put("concepto", "Cuenta de electricidad")
-            put("empresa", "Empresa Demo")
-            put("monto", 45000.0)
-            put("vencimiento", "2026-11-30")
-            put("estado", "PENDIENTE")
-        }
-        db.insert("deudas", null, deuda)
+        // Solo el administrador viene por defecto.
+        insertarUsuario(
+            db,
+            "Administrador Ceo",
+            "admin@pagoflex.cl",
+            "Admin123$",
+            "ADMIN"
+        )
     }
 
     private fun insertarUsuario(
@@ -88,7 +82,10 @@ class PagoFlexDbHelper(context: Context) :
         oldVersion: Int,
         newVersion: Int
     ) {
-        // En futuras versiones, agrega migraciones sin borrar los datos.
+        db.execSQL("DROP TABLE IF EXISTS pagos")
+        db.execSQL("DROP TABLE IF EXISTS deudas")
+        db.execSQL("DROP TABLE IF EXISTS usuarios")
+        onCreate(db)
     }
 
     private fun hash(texto: String): String {
@@ -241,7 +238,8 @@ class PagoFlexDbHelper(context: Context) :
                 put("estado", "PAGADA")
             }
             val filas = db.update(
-                "deudas", actualizacion,
+                "deudas",
+                actualizacion,
                 "id = ? AND usuario_id = ? AND estado = 'PENDIENTE'",
                 arrayOf(deudaId.toString(), usuarioId.toString())
             )
