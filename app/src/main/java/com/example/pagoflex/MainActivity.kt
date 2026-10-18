@@ -25,6 +25,7 @@ import com.example.pagoflex.ui.screens.DetallePerfilScreen
 import com.example.pagoflex.ui.screens.FormularioScreen
 import com.example.pagoflex.ui.screens.HistorialScreen
 import com.example.pagoflex.ui.screens.PagoExitosoScreen
+import com.example.pagoflex.ui.screens.ResumenHistorialScreen
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.FormularioViewModel
 import com.example.pagoflex.viewmodel.PagoViewModel
@@ -192,7 +193,7 @@ class MainActivity : ComponentActivity() {
                                 "detallePago" -> {
                                     if (deudaPendiente == null) {
                                         LaunchedEffect(Unit) {
-                                            pantallaActual = "historial"
+                                            pantallaActual = "movimientos"
                                         }
                                     } else {
                                         DetallePagoScreen(
@@ -227,7 +228,7 @@ class MainActivity : ComponentActivity() {
                                             pantallaActual = "inicio"
                                         },
                                         onVerHistorial = {
-                                            pantallaActual = "historial"
+                                            pantallaActual = "movimientos"
                                         },
                                         concepto = ultimoPago?.get("concepto").orEmpty(),
                                         empresa = "",
@@ -237,13 +238,33 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
 
-                                "historial" -> {
+                                "movimientos" -> {
+                                    val digitos = pagoUiState.ultimosDigitosVisa
+                                    val metodo = if (digitos.isNotBlank()) {
+                                        "Visa •••• $digitos"
+                                    } else {
+                                        "Visa •••• 4582"
+                                    }
                                     HistorialScreen(
                                         onVolverInicio = {
                                             pantallaActual = "inicio"
                                         },
+                                        onIrAPagos = { },
+                                        onIrAHistorial = {
+                                            pantallaActual = "historial"
+                                        },
+                                        pagos = pagosUsuario,
+                                        metodoPago = metodo
+                                    )
+                                }
+
+                                "historial" -> {
+                                    ResumenHistorialScreen(
+                                        onVolverInicio = {
+                                            pantallaActual = "inicio"
+                                        },
                                         onIrAPagos = {
-                                            pantallaActual = "detallePago"
+                                            pantallaActual = "movimientos"
                                         },
                                         pagos = pagosUsuario
                                     )
@@ -258,13 +279,7 @@ class MainActivity : ComponentActivity() {
                                             pantallaActual = "detallePago"
                                         },
                                         onIrAPagos = {
-                                            if (deudasPendientes.isNotEmpty()) {
-                                                deudaSeleccionadaId =
-                                                    deudasPendientes.first()["id"]
-                                                pantallaActual = "detallePago"
-                                            } else {
-                                                pantallaActual = "historial"
-                                            }
+                                            pantallaActual = "movimientos"
                                         },
                                         onIrAHistorial = {
                                             pantallaActual = "historial"
