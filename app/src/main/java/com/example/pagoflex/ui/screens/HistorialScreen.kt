@@ -27,6 +27,7 @@ private val GrisTexto = Color(0xFF64748B)
 fun HistorialScreen(
     onVolverInicio: () -> Unit,
     onIrAPagos: () -> Unit,
+    onIrAHistorial: () -> Unit = {},
     pagos: List<Map<String, String>> = emptyList(),
     metodoPago: String = "Visa •••• 4582"
 ) {
@@ -50,13 +51,13 @@ fun HistorialScreen(
                     icon = { Text("📄", fontSize = 20.sp) },
                     label = { Text("Pagos") },
                     selected = true,
-                    onClick = { }
+                    onClick = onIrAPagos
                 )
                 NavigationBarItem(
                     icon = { Text("🕒", fontSize = 20.sp) },
                     label = { Text("Historial") },
                     selected = false,
-                    onClick = { }
+                    onClick = onIrAHistorial
                 )
             }
         }
