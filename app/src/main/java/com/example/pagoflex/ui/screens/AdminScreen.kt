@@ -5,16 +5,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.pagoflex.data.PagoFlexRepository
 import com.example.pagoflex.data.ValidacionesDeuda
+import com.example.pagoflex.ui.components.BotonPrincipal
+import com.example.pagoflex.ui.components.BotonSecundario
+import com.example.pagoflex.ui.components.CampoTexto
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,8 +41,14 @@ fun AdminScreen(
     val listaState = rememberLazyListState()
 
     val formatoMoneda = remember {
-        NumberFormat.getCurrencyInstance(Locale("es", "CL"))
+        NumberFormat.getCurrencyInstance(
+            Locale("es", "CL")
+        )
     }
+
+    // =====================================================
+    // ESTADO DE LA PANTALLA
+    // =====================================================
 
     var mostrarConfiguracion by remember {
         mutableStateOf(false)
@@ -63,29 +74,58 @@ fun AdminScreen(
         mutableStateOf<Map<String, String>?>(null)
     }
 
-    var concepto by remember { mutableStateOf("") }
-    var empresa by remember { mutableStateOf("") }
-    var monto by remember { mutableStateOf("") }
-    var vencimiento by remember { mutableStateOf("") }
+    var concepto by remember {
+        mutableStateOf("")
+    }
 
-    var mensaje by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
-    var expandido by remember { mutableStateOf(false) }
-    var ocupado by remember { mutableStateOf(false) }
+    var empresa by remember {
+        mutableStateOf("")
+    }
+
+    var monto by remember {
+        mutableStateOf("")
+    }
+
+    var vencimiento by remember {
+        mutableStateOf("")
+    }
+
+    var mensaje by remember {
+        mutableStateOf("")
+    }
+
+    var error by remember {
+        mutableStateOf(false)
+    }
+
+    var expandido by remember {
+        mutableStateOf(false)
+    }
+
+    var ocupado by remember {
+        mutableStateOf(false)
+    }
+
+    // =====================================================
+    // FORMULARIO Y DATOS
+    // =====================================================
 
     fun limpiarFormulario() {
         deudaEditandoId = null
         usuarioSeleccionadoId = null
+
         concepto = ""
         empresa = ""
         monto = ""
         vencimiento = ""
+
         expandido = false
     }
 
     suspend fun cargarDatos() {
         val resultado = withContext(Dispatchers.IO) {
-            repository.listarClientes() to repository.listarDeudas()
+            repository.listarClientes() to
+                    repository.listarDeudas()
         }
 
         usuarios = resultado.first
@@ -98,12 +138,15 @@ fun AdminScreen(
         } catch (_: Exception) {
             mensaje += " No se pudo recargar el listado. " +
                     "Vuelve a ingresar al panel para verificarlo."
+
             error = true
         }
     }
 
     fun guardarDeuda() {
-        if (ocupado) return
+        if (ocupado) {
+            return
+        }
 
         val usuarioId = usuarioSeleccionadoId?.toIntOrNull()
 
@@ -172,9 +215,11 @@ fun AdminScreen(
                     recargarDespuesDeOperacion()
                 } else {
                     mensaje = if (idEdicion == null) {
-                        "No se pudo crear la deuda. Revisa el usuario y los datos."
+                        "No se pudo crear la deuda. " +
+                                "Revisa el usuario y los datos."
                     } else {
-                        "No se pudo modificar. Puede que ya tenga pagos o que no exista."
+                        "No se pudo modificar. " +
+                                "Puede que ya tenga pagos o que no exista."
                     }
 
                     error = true
@@ -182,6 +227,7 @@ fun AdminScreen(
             } catch (_: Exception) {
                 mensaje = "Ocurrió un error al guardar. " +
                         "Verifica el listado antes de volver a intentarlo."
+
                 error = true
             } finally {
                 ocupado = false
@@ -190,7 +236,9 @@ fun AdminScreen(
     }
 
     fun editarDeuda(deuda: Map<String, String>) {
-        if (ocupado) return
+        if (ocupado) {
+            return
+        }
 
         val id = deuda["id"]?.toIntOrNull()
 
@@ -208,15 +256,16 @@ fun AdminScreen(
         concepto = deuda["concepto"].orEmpty()
         empresa = deuda["empresa"].orEmpty()
 
-        monto = deuda["monto"].orEmpty().let {
-            if (it.endsWith(".0")) {
-                it.dropLast(2)
+        monto = deuda["monto"].orEmpty().let { valor ->
+            if (valor.endsWith(".0")) {
+                valor.dropLast(2)
             } else {
-                it
+                valor
             }
         }
 
         vencimiento = deuda["vencimiento"].orEmpty()
+
         mensaje = "Editando deuda #$id."
         error = false
         expandido = false
@@ -227,9 +276,12 @@ fun AdminScreen(
     }
 
     fun eliminarDeuda(deuda: Map<String, String>) {
-        if (ocupado) return
+        if (ocupado) {
+            return
+        }
 
         val id = deuda["id"]?.toIntOrNull()
+
         deudaAEliminar = null
 
         if (id == null) {
@@ -253,21 +305,28 @@ fun AdminScreen(
 
                     mensaje = "Deuda eliminada correctamente."
                     error = false
+
                     recargarDespuesDeOperacion()
                 } else {
                     mensaje = "No se pudo eliminar. " +
                             "Las deudas con pagos registrados se conservan."
+
                     error = true
                 }
             } catch (_: Exception) {
                 mensaje = "Ocurrió un error al eliminar. " +
                         "Verifica el listado antes de volver a intentarlo."
+
                 error = true
             } finally {
                 ocupado = false
             }
         }
     }
+
+    // =====================================================
+    // CARGA INICIAL
+    // =====================================================
 
     LaunchedEffect(repository) {
         ocupado = true
@@ -277,6 +336,7 @@ fun AdminScreen(
         } catch (_: Exception) {
             mensaje = "No se pudo cargar la información. " +
                     "Vuelve a ingresar al panel."
+
             error = true
         } finally {
             ocupado = false
@@ -286,6 +346,10 @@ fun AdminScreen(
     val usuarioSeleccionado = usuarios.firstOrNull {
         it["id"] == usuarioSeleccionadoId
     }
+
+    // =====================================================
+    // CONTENIDO DE LA PANTALLA
+    // =====================================================
 
     Scaffold(
         containerColor = colores.background,
@@ -305,6 +369,7 @@ fun AdminScreen(
                         )
                     }
                 },
+
                 actions = {
                     TextButton(
                         onClick = {
@@ -313,14 +378,14 @@ fun AdminScreen(
                         enabled = !ocupado,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = colores.onPrimary,
-                            disabledContentColor = colores.onPrimary.copy(
-                                alpha = 0.5f
-                            )
+                            disabledContentColor =
+                                colores.onPrimary.copy(alpha = 0.5f)
                         )
                     ) {
                         Text("Configuración")
                     }
                 },
+
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colores.primary,
                     titleContentColor = colores.onPrimary,
@@ -338,6 +403,8 @@ fun AdminScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // BIENVENIDA
+
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -368,24 +435,24 @@ fun AdminScreen(
                 }
             }
 
+            // CERRAR SESIÓN
+
             item {
-                OutlinedButton(
+                BotonSecundarioAdmin(
+                    texto = "Cerrar sesión",
                     onClick = onCerrarSesion,
-                    enabled = !ocupado,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
+                    habilitado = !ocupado,
+                    modifier = Modifier.fillMaxWidth(),
+                    altura = 50.dp,
+                    forma = RoundedCornerShape(14.dp),
+                    colores = ButtonDefaults.outlinedButtonColors(
                         contentColor = colores.error
-                    )
-                ) {
-                    Text(
-                        text = "Cerrar sesión",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                    ),
+                    pesoTexto = FontWeight.Bold
+                )
             }
+
+            // INDICADOR Y MENSAJES
 
             if (ocupado || mensaje.isNotBlank()) {
                 item {
@@ -411,6 +478,8 @@ fun AdminScreen(
                     }
                 }
             }
+
+            // FORMULARIO
 
             item {
                 Card(
@@ -444,6 +513,8 @@ fun AdminScreen(
                             )
                         }
 
+                        // SELECTOR DE USUARIO
+
                         ExposedDropdownMenuBox(
                             expanded = expandido,
                             onExpandedChange = {
@@ -458,15 +529,19 @@ fun AdminScreen(
                                 }.orEmpty(),
                                 onValueChange = {},
                                 readOnly = true,
-                                enabled = !ocupado && usuarios.isNotEmpty(),
+                                enabled = !ocupado &&
+                                        usuarios.isNotEmpty(),
+
                                 label = {
                                     Text("Usuario destinatario")
                                 },
+
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(
                                         expanded = expandido
                                     )
                                 },
+
                                 modifier = Modifier
                                     .menuAnchor()
                                     .fillMaxWidth()
@@ -487,7 +562,9 @@ fun AdminScreen(
                                             )
                                         },
                                         onClick = {
-                                            usuarioSeleccionadoId = cliente["id"]
+                                            usuarioSeleccionadoId =
+                                                cliente["id"]
+
                                             expandido = false
                                         }
                                     )
@@ -495,114 +572,92 @@ fun AdminScreen(
                             }
                         }
 
-                        OutlinedTextField(
-                            value = concepto,
-                            onValueChange = {
+                        // CAMPOS REUTILIZABLES
+
+                        CampoAdmin(
+                            valor = concepto,
+                            onValorCambia = {
                                 concepto = it
                             },
-                            label = {
-                                Text("Concepto")
-                            },
-                            enabled = !ocupado,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                            etiqueta = "Concepto",
+                            habilitado = !ocupado
                         )
 
-                        OutlinedTextField(
-                            value = empresa,
-                            onValueChange = {
+                        CampoAdmin(
+                            valor = empresa,
+                            onValorCambia = {
                                 empresa = it
                             },
-                            label = {
-                                Text("Empresa o servicio")
-                            },
-                            enabled = !ocupado,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                            etiqueta = "Empresa o servicio",
+                            habilitado = !ocupado
                         )
 
-                        OutlinedTextField(
-                            value = monto,
-                            onValueChange = {
+                        CampoAdmin(
+                            valor = monto,
+                            onValorCambia = {
                                 monto = it
                             },
-                            label = {
-                                Text("Monto en CLP")
-                            },
-                            supportingText = {
-                                Text(
-                                    text = "Sin separadores de miles. Ejemplo: 45000"
-                                )
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Decimal
-                            ),
-                            enabled = !ocupado,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                            etiqueta = "Monto en CLP",
+                            habilitado = !ocupado,
+                            tipoTeclado = KeyboardType.Decimal,
+                            ayuda = "Sin separadores de miles. Ejemplo: 45000"
                         )
 
-                        OutlinedTextField(
-                            value = vencimiento,
-                            onValueChange = {
+                        CampoAdmin(
+                            valor = vencimiento,
+                            onValorCambia = {
                                 vencimiento = it
                             },
-                            label = {
-                                Text("Fecha de vencimiento")
-                            },
-                            placeholder = {
-                                Text("2026-11-30")
-                            },
-                            supportingText = {
-                                Text(
-                                    text = "Formato AAAA-MM-DD. Debe ser una fecha real."
-                                )
-                            },
-                            enabled = !ocupado,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                            etiqueta = "Fecha de vencimiento",
+                            habilitado = !ocupado,
+                            placeholder = "2026-11-30",
+                            ayuda = "Formato AAAA-MM-DD. Debe ser una fecha real."
                         )
 
-                        Button(
+                        // GUARDAR
+
+                        BotonPrincipal(
+                            texto = if (deudaEditandoId == null) {
+                                "Crear deuda"
+                            } else {
+                                "Guardar cambios"
+                            },
                             onClick = {
                                 guardarDeuda()
                             },
-                            enabled = !ocupado && usuarios.isNotEmpty(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
+                            habilitado = !ocupado &&
+                                    usuarios.isNotEmpty(),
+                            modifier = Modifier.fillMaxWidth(),
+                            altura = 52.dp,
+                            forma = RoundedCornerShape(14.dp),
+                            colores = ButtonDefaults.buttonColors(
                                 containerColor = colores.secondary,
                                 contentColor = colores.onSecondary
-                            )
-                        ) {
-                            Text(
-                                text = if (deudaEditandoId == null) {
-                                    "Crear deuda"
-                                } else {
-                                    "Guardar cambios"
-                                },
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                            ),
+                            elevacion = ButtonDefaults.buttonElevation(),
+                            relleno = ButtonDefaults.ContentPadding,
+                            pesoTexto = FontWeight.Bold
+                        )
+
+                        // CANCELAR EDICIÓN
 
                         if (deudaEditandoId != null) {
-                            OutlinedButton(
+                            BotonSecundarioAdmin(
+                                texto = "Cancelar edición",
                                 onClick = {
                                     limpiarFormulario()
                                     mensaje = ""
                                     error = false
                                 },
-                                enabled = !ocupado,
+                                habilitado = !ocupado,
                                 modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Cancelar edición")
-                            }
+                            )
                         }
                     }
                 }
             }
+
+            // ENCABEZADO DE DEUDAS
 
             item {
                 Text(
@@ -622,6 +677,8 @@ fun AdminScreen(
                 }
             }
 
+            // LISTADO DE DEUDAS
+
             items(
                 items = deudas,
                 key = {
@@ -629,7 +686,10 @@ fun AdminScreen(
                 }
             ) { deuda ->
                 val pendiente = deuda["estado"] == "PENDIENTE"
-                val montoDeuda = deuda["monto"]?.toDoubleOrNull() ?: 0.0
+
+                val montoDeuda = deuda["monto"]
+                    ?.toDoubleOrNull() ?: 0.0
+
                 val fecha = deuda["vencimiento"].orEmpty()
 
                 Card(
@@ -651,15 +711,21 @@ fun AdminScreen(
                         )
 
                         Text(
-                            text = "Usuario: ${deuda["nombreUsuario"].orEmpty()}"
+                            text = "Usuario: ${
+                                deuda["nombreUsuario"].orEmpty()
+                            }"
                         )
 
                         Text(
-                            text = "Empresa: ${deuda["empresa"].orEmpty()}"
+                            text = "Empresa: ${
+                                deuda["empresa"].orEmpty()
+                            }"
                         )
 
                         Text(
-                            text = "Monto: ${formatoMoneda.format(montoDeuda)}",
+                            text = "Monto: ${
+                                formatoMoneda.format(montoDeuda)
+                            }",
                             fontWeight = FontWeight.SemiBold
                         )
 
@@ -671,7 +737,9 @@ fun AdminScreen(
                             val dias = ValidacionesDeuda.diasHasta(fecha)
 
                             Text(
-                                text = ValidacionesDeuda.textoVencimiento(fecha),
+                                text = ValidacionesDeuda.textoVencimiento(
+                                    fecha
+                                ),
                                 color = if (dias == null || dias < 0) {
                                     colores.error
                                 } else {
@@ -681,41 +749,44 @@ fun AdminScreen(
                         }
 
                         Text(
-                            text = "Estado: ${deuda["estado"].orEmpty()}",
+                            text = "Estado: ${
+                                deuda["estado"].orEmpty()
+                            }",
                             fontWeight = FontWeight.SemiBold
                         )
 
                         if (pendiente) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(8.dp)
                             ) {
-                                OutlinedButton(
+                                BotonSecundarioAdmin(
+                                    texto = "Editar",
                                     onClick = {
                                         editarDeuda(deuda)
                                     },
-                                    enabled = !ocupado,
+                                    habilitado = !ocupado,
                                     modifier = Modifier.weight(1f)
-                                ) {
-                                    Text("Editar")
-                                }
+                                )
 
-                                OutlinedButton(
+                                BotonSecundarioAdmin(
+                                    texto = "Eliminar",
                                     onClick = {
                                         deudaAEliminar = deuda
                                     },
-                                    enabled = !ocupado,
+                                    habilitado = !ocupado,
                                     modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = colores.error
-                                    )
-                                ) {
-                                    Text("Eliminar")
-                                }
+                                    colores =
+                                        ButtonDefaults.outlinedButtonColors(
+                                            contentColor = colores.error
+                                        )
+                                )
                             }
                         } else {
                             Text(
-                                text = "Se conserva para mantener el historial de pagos.",
+                                text = "Se conserva para mantener " +
+                                        "el historial de pagos.",
                                 color = colores.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -726,14 +797,20 @@ fun AdminScreen(
         }
     }
 
+    // =====================================================
+    // CONFIRMACIÓN DE ELIMINACIÓN
+    // =====================================================
+
     deudaAEliminar?.let { deuda ->
         AlertDialog(
             onDismissRequest = {
                 deudaAEliminar = null
             },
+
             title = {
                 Text("Eliminar deuda")
             },
+
             text = {
                 Text(
                     text = "¿Eliminar \"${deuda["concepto"].orEmpty()}\" " +
@@ -741,6 +818,7 @@ fun AdminScreen(
                             "Esta acción no se puede deshacer."
                 )
             },
+
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -754,6 +832,7 @@ fun AdminScreen(
                     )
                 }
             },
+
             dismissButton = {
                 TextButton(
                     onClick = {
@@ -766,17 +845,23 @@ fun AdminScreen(
         )
     }
 
+    // =====================================================
+    // CONFIGURACIÓN DEL TEMA
+    // =====================================================
+
     if (mostrarConfiguracion) {
         AlertDialog(
             onDismissRequest = {
                 mostrarConfiguracion = false
             },
+
             title = {
                 Text(
                     text = "Configuración",
                     fontWeight = FontWeight.Bold
                 )
             },
+
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -787,7 +872,8 @@ fun AdminScreen(
                     ) {
                         Column(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement =
+                                Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = "Modo oscuro",
@@ -818,24 +904,25 @@ fun AdminScreen(
                         text = if (tema.sigueSistema) {
                             "PagoFlex está utilizando el tema del teléfono."
                         } else {
-                            "PagoFlex está utilizando la apariencia que elegiste."
+                            "PagoFlex está utilizando la apariencia " +
+                                    "que elegiste."
                         },
                         color = colores.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
 
                     if (!tema.sigueSistema) {
-                        OutlinedButton(
+                        BotonSecundarioAdmin(
+                            texto = "Usar tema del teléfono",
                             onClick = {
                                 tema.usarTemaDelSistema()
                             },
                             modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Usar tema del teléfono")
-                        }
+                        )
                     }
                 }
             },
+
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -847,4 +934,66 @@ fun AdminScreen(
             }
         )
     }
+}
+
+// =====================================================
+// CONFIGURACIÓN DE LOS CAMPOS DE ESTA PANTALLA
+// Usa CampoTexto sin cambiar su estilo global.
+// =====================================================
+
+@Composable
+private fun CampoAdmin(
+    valor: String,
+    onValorCambia: (String) -> Unit,
+    etiqueta: String,
+    habilitado: Boolean,
+    tipoTeclado: KeyboardType = KeyboardType.Text,
+    ayuda: String? = null,
+    placeholder: String? = null
+) {
+    CampoTexto(
+        valor = valor,
+        onValorCambia = onValorCambia,
+        etiqueta = etiqueta,
+        icono = null,
+        habilitado = habilitado,
+        tipoTeclado = tipoTeclado,
+        ayuda = ayuda,
+        placeholder = placeholder,
+        forma = OutlinedTextFieldDefaults.shape,
+        colores = OutlinedTextFieldDefaults.colors(),
+        accionTeclado = ImeAction.Default,
+        reservarEspacioAyuda = false
+    )
+}
+
+// =====================================================
+// CONFIGURACIÓN DE LOS BOTONES SECUNDARIOS DEL ADMIN
+// Conserva los valores Material usados anteriormente.
+// =====================================================
+
+@Suppress("DEPRECATION")
+@Composable
+private fun BotonSecundarioAdmin(
+    texto: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    habilitado: Boolean = true,
+    altura: Dp? = null,
+    forma: Shape = ButtonDefaults.outlinedShape,
+    colores: ButtonColors = ButtonDefaults.outlinedButtonColors(),
+    pesoTexto: FontWeight? = null
+) {
+    BotonSecundario(
+        texto = texto,
+        onClick = onClick,
+        modifier = modifier,
+        habilitado = habilitado,
+        colores = colores,
+        borde = ButtonDefaults.outlinedButtonBorder,
+        forma = forma,
+        altura = altura,
+        relleno = ButtonDefaults.ContentPadding,
+        pesoTexto = pesoTexto
+    )
 }

@@ -19,12 +19,6 @@ import com.example.pagoflex.ui.styles.EstilosTarjeta
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 
-// =====================================================================
-//  TarjetaEstadistica.kt  —  Número grande + etiqueta (ej. "128 Seguidores").
-//  Se usa dentro de una Row con Modifier.weight(1f) para que las tres
-//  tarjetas midan lo mismo (como flex: 1 en CSS).
-// =====================================================================
-
 @Composable
 fun TarjetaEstadistica(
     valor: String,

@@ -3,19 +3,28 @@ package com.example.pagoflex.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.data.ValidacionesTarjeta
+import com.example.pagoflex.ui.components.BotonPrincipal
+import com.example.pagoflex.ui.components.BotonSecundario
+import com.example.pagoflex.ui.components.CampoTexto
 import com.example.pagoflex.ui.components.FotoPerfilEditable
+import com.example.pagoflex.ui.components.InterruptorConTexto
+import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
-import java.util.Calendar
+
+// =====================================================
+// PANTALLA DE PERFIL
+// =====================================================
 
 @Composable
 fun DetallePerfilScreen(
@@ -51,6 +60,8 @@ fun DetallePerfilScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
+            // CABECERA
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -78,7 +89,8 @@ fun DetallePerfilScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Foto del usuario y botón para tomar una nueva.
+            // FOTO Y DATOS DEL USUARIO
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -105,6 +117,8 @@ fun DetallePerfilScreen(
             }
 
             Spacer(Modifier.height(20.dp))
+
+            // PESTAÑAS
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -133,6 +147,8 @@ fun DetallePerfilScreen(
             }
 
             Spacer(Modifier.height(20.dp))
+
+            // CONTENIDO DE LA PESTAÑA
 
             when (pestanaSeleccionada) {
                 "tarjetas" -> {
@@ -166,6 +182,10 @@ fun DetallePerfilScreen(
     }
 }
 
+// =====================================================
+// BOTÓN DE PESTAÑA
+// =====================================================
+
 @Composable
 fun BotonPestanaPerfil(
     titulo: String,
@@ -174,31 +194,38 @@ fun BotonPestanaPerfil(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    Button(
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.height(40.dp),
-        contentPadding = PaddingValues(horizontal = 18.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (seleccionado) {
-                colores.primary
-            } else {
-                colores.surfaceVariant
-            },
-            contentColor = if (seleccionado) {
-                colores.onPrimary
-            } else {
-                colores.onSurfaceVariant
-            }
+    ProvideTextStyle(
+        value = MaterialTheme.typography.labelLarge.copy(
+            fontSize = 13.sp
         )
     ) {
-        Text(
-            text = titulo,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold
+        BotonPrincipal(
+            texto = titulo,
+            onClick = onClick,
+            altura = 40.dp,
+            forma = RoundedCornerShape(12.dp),
+            colores = ButtonDefaults.buttonColors(
+                containerColor = if (seleccionado) {
+                    colores.primary
+                } else {
+                    colores.surfaceVariant
+                },
+                contentColor = if (seleccionado) {
+                    colores.onPrimary
+                } else {
+                    colores.onSurfaceVariant
+                }
+            ),
+            elevacion = ButtonDefaults.buttonElevation(),
+            relleno = PaddingValues(horizontal = 18.dp),
+            pesoTexto = FontWeight.Bold
         )
     }
 }
+
+// =====================================================
+// SECCIÓN: MI CUENTA
+// =====================================================
 
 @Composable
 fun ContenidoMiCuenta(
@@ -232,26 +259,9 @@ fun ContenidoMiCuenta(
     }
 }
 
-private fun vencimientoTarjetaValido(texto: String): Boolean {
-    if (!texto.matches(Regex("[0-9]{2}/[0-9]{2}"))) {
-        return false
-    }
-
-    val mes = texto.take(2).toIntOrNull() ?: return false
-    val anioCorto = texto.takeLast(2).toIntOrNull() ?: return false
-    val anio = 2000 + anioCorto
-
-    if (mes !in 1..12) {
-        return false
-    }
-
-    val hoy = Calendar.getInstance()
-    val anioActual = hoy.get(Calendar.YEAR)
-    val mesActual = hoy.get(Calendar.MONTH) + 1
-
-    return anio > anioActual ||
-            (anio == anioActual && mes >= mesActual)
-}
+// =====================================================
+// SECCIÓN: MIS TARJETAS
+// =====================================================
 
 @Composable
 fun ContenidoMisTarjetas(
@@ -263,12 +273,29 @@ fun ContenidoMisTarjetas(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    var mostrarDialogo by remember { mutableStateOf(false) }
-    var numeroTarjeta by remember { mutableStateOf("") }
-    var titular by remember { mutableStateOf("") }
-    var vencimiento by remember { mutableStateOf("") }
-    var mensajeError by remember { mutableStateOf("") }
-    var mensajeExito by remember { mutableStateOf("") }
+    var mostrarDialogo by remember {
+        mutableStateOf(false)
+    }
+
+    var numeroTarjeta by remember {
+        mutableStateOf("")
+    }
+
+    var titular by remember {
+        mutableStateOf("")
+    }
+
+    var vencimiento by remember {
+        mutableStateOf("")
+    }
+
+    var mensajeError by remember {
+        mutableStateOf("")
+    }
+
+    var mensajeExito by remember {
+        mutableStateOf("")
+    }
 
     fun cerrarDialogo() {
         numeroTarjeta = ""
@@ -288,83 +315,91 @@ fun ContenidoMisTarjetas(
             fontWeight = FontWeight.Bold
         )
 
+        // TARJETA REGISTRADA
+
         if (ultimosDigitosVisa.isNotBlank()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
+            TarjetaSeccion(
+                forma = RoundedCornerShape(16.dp),
+                colores = CardDefaults.cardColors(
                     containerColor = colores.primaryContainer,
                     contentColor = colores.onPrimaryContainer
-                )
+                ),
+                elevacion = CardDefaults.cardElevation(
+                    defaultElevation = 0.dp
+                ),
+                relleno = PaddingValues(20.dp),
+                separacion = 12.dp
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "Tarjeta de demostración",
-                            modifier = Modifier.weight(1f),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-
-                        if (tarjetaPrincipal) {
-                            Text(
-                                text = "Principal",
-                                fontSize = 10.sp
-                            )
-                        }
-                    }
-
                     Text(
-                        text = "•••• •••• •••• $ultimosDigitosVisa",
-                        fontSize = 18.sp,
+                        text = "Tarjeta de demostración",
+                        modifier = Modifier.weight(1f),
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
+                        fontSize = 14.sp
                     )
 
-                    if (titularTarjeta.isNotBlank()) {
+                    if (tarjetaPrincipal) {
                         Text(
-                            text = titularTarjeta,
-                            fontSize = 13.sp
-                        )
-                    }
-
-                    if (vencimientoTarjeta.isNotBlank()) {
-                        val vigente = vencimientoTarjetaValido(
-                            vencimientoTarjeta
-                        )
-
-                        Text(
-                            text = if (vigente) {
-                                "Vence: $vencimientoTarjeta"
-                            } else {
-                                "Vencida: $vencimientoTarjeta"
-                            },
-                            color = if (vigente) {
-                                colores.onPrimaryContainer
-                            } else {
-                                colores.error
-                            },
-                            fontSize = 12.sp
+                            text = "Principal",
+                            fontSize = 10.sp
                         )
                     }
                 }
+
+                Text(
+                    text = "•••• •••• •••• $ultimosDigitosVisa",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                )
+
+                if (titularTarjeta.isNotBlank()) {
+                    Text(
+                        text = titularTarjeta,
+                        fontSize = 13.sp
+                    )
+                }
+
+                if (vencimientoTarjeta.isNotBlank()) {
+                    val vigente =
+                        ValidacionesTarjeta.vencimientoVigente(
+                            vencimientoTarjeta
+                        )
+
+                    Text(
+                        text = if (vigente) {
+                            "Vence: $vencimientoTarjeta"
+                        } else {
+                            "Vencida: $vencimientoTarjeta"
+                        },
+                        color = if (vigente) {
+                            colores.onPrimaryContainer
+                        } else {
+                            colores.error
+                        },
+                        fontSize = 12.sp
+                    )
+                }
             }
         } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
+            // ESTADO SIN TARJETAS
+
+            TarjetaSeccion(
+                forma = CardDefaults.shape,
+                colores = CardDefaults.cardColors(
                     containerColor = colores.surface,
                     contentColor = colores.onSurface
-                )
+                ),
+                elevacion = CardDefaults.cardElevation(
+                    defaultElevation = 0.dp
+                ),
+                relleno = PaddingValues(20.dp),
+                separacion = 0.dp
             ) {
                 Text(
-                    text = "Aún no tienes tarjetas vinculadas.",
-                    modifier = Modifier.padding(20.dp)
+                    text = "Aún no tienes tarjetas vinculadas."
                 )
             }
         }
@@ -377,7 +412,14 @@ fun ContenidoMisTarjetas(
             )
         }
 
-        Button(
+        // ABRIR DIÁLOGO
+
+        BotonPrincipal(
+            texto = if (ultimosDigitosVisa.isBlank()) {
+                "+ Vincular tarjeta de prueba"
+            } else {
+                "Reemplazar tarjeta de prueba"
+            },
             onClick = {
                 numeroTarjeta = ""
                 titular = ""
@@ -386,24 +428,17 @@ fun ContenidoMisTarjetas(
                 mensajeExito = ""
                 mostrarDialogo = true
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
+            modifier = Modifier.fillMaxWidth(),
+            altura = 48.dp,
+            forma = RoundedCornerShape(12.dp),
+            colores = ButtonDefaults.buttonColors(
                 containerColor = colores.secondary,
                 contentColor = colores.onSecondary
-            )
-        ) {
-            Text(
-                text = if (ultimosDigitosVisa.isBlank()) {
-                    "+ Vincular tarjeta de prueba"
-                } else {
-                    "Reemplazar tarjeta de prueba"
-                },
-                fontWeight = FontWeight.Bold
-            )
-        }
+            ),
+            elevacion = ButtonDefaults.buttonElevation(),
+            relleno = ButtonDefaults.ContentPadding,
+            pesoTexto = FontWeight.Bold
+        )
 
         Text(
             text = "Simulación académica. Una tarjeta principal por usuario. " +
@@ -413,14 +448,18 @@ fun ContenidoMisTarjetas(
         )
     }
 
+    // DIÁLOGO DE VINCULACIÓN
+
     if (mostrarDialogo) {
         AlertDialog(
             onDismissRequest = {
                 cerrarDialogo()
             },
+
             title = {
                 Text("Vincular tarjeta de prueba")
             },
+
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(
@@ -430,7 +469,8 @@ fun ContenidoMisTarjetas(
                 ) {
                     Text(
                         text = "Usa datos ficticios. Solo se conservan " +
-                                "los últimos cuatro dígitos, el titular y el vencimiento."
+                                "los últimos cuatro dígitos, el titular " +
+                                "y el vencimiento."
                     )
 
                     if (ultimosDigitosVisa.isNotBlank()) {
@@ -440,22 +480,18 @@ fun ContenidoMisTarjetas(
                         )
                     }
 
-                    OutlinedTextField(
-                        value = titular,
-                        onValueChange = {
+                    CampoTarjetaPerfil(
+                        valor = titular,
+                        onValorCambia = {
                             titular = it
                             mensajeError = ""
                         },
-                        label = {
-                            Text("Titular")
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        etiqueta = "Titular"
                     )
 
-                    OutlinedTextField(
-                        value = numeroTarjeta,
-                        onValueChange = { entrada ->
+                    CampoTarjetaPerfil(
+                        valor = numeroTarjeta,
+                        onValorCambia = { entrada ->
                             val limpio = entrada
                                 .replace(" ", "")
                                 .replace("-", "")
@@ -468,22 +504,14 @@ fun ContenidoMisTarjetas(
                                 mensajeError = ""
                             }
                         },
-                        label = {
-                            Text("Número de tarjeta de prueba")
-                        },
-                        supportingText = {
-                            Text("16 dígitos ficticios.")
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        etiqueta = "Número de tarjeta de prueba",
+                        ayuda = "16 dígitos ficticios.",
+                        tipoTeclado = KeyboardType.Number
                     )
 
-                    OutlinedTextField(
-                        value = vencimiento,
-                        onValueChange = { entrada ->
+                    CampoTarjetaPerfil(
+                        valor = vencimiento,
+                        onValorCambia = { entrada ->
                             val limpio = entrada.replace("/", "")
 
                             if (
@@ -499,17 +527,9 @@ fun ContenidoMisTarjetas(
                                 mensajeError = ""
                             }
                         },
-                        label = {
-                            Text("Vencimiento MM/AA")
-                        },
-                        placeholder = {
-                            Text("12/30")
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        etiqueta = "Vencimiento MM/AA",
+                        placeholder = "12/30",
+                        tipoTeclado = KeyboardType.Number
                     )
 
                     if (mensajeError.isNotBlank()) {
@@ -520,18 +540,25 @@ fun ContenidoMisTarjetas(
                     }
                 }
             },
+
             confirmButton = {
-                Button(
+                BotonPrincipal(
+                    texto = "Vincular",
                     onClick = {
                         mensajeError = when {
-                            titular.isBlank() ->
+                            titular.isBlank() -> {
                                 "Ingresa el titular."
+                            }
 
-                            numeroTarjeta.length != 16 ->
+                            numeroTarjeta.length != 16 -> {
                                 "Ingresa exactamente 16 dígitos."
+                            }
 
-                            !vencimientoTarjetaValido(vencimiento) ->
+                            !ValidacionesTarjeta.vencimientoVigente(
+                                vencimiento
+                            ) -> {
                                 "Ingresa un vencimiento válido en MM/AA."
+                            }
 
                             else -> ""
                         }
@@ -545,17 +572,22 @@ fun ContenidoMisTarjetas(
 
                             if (guardada) {
                                 cerrarDialogo()
-                                mensajeExito = "Tarjeta vinculada correctamente."
+                                mensajeExito =
+                                    "Tarjeta vinculada correctamente."
                             } else {
                                 mensajeError = "No se pudo vincular. " +
                                         "Vuelve a iniciar sesión."
                             }
                         }
-                    }
-                ) {
-                    Text("Vincular")
-                }
+                    },
+                    altura = null,
+                    forma = ButtonDefaults.shape,
+                    colores = ButtonDefaults.buttonColors(),
+                    elevacion = ButtonDefaults.buttonElevation(),
+                    relleno = ButtonDefaults.ContentPadding
+                )
             },
+
             dismissButton = {
                 TextButton(
                     onClick = {
@@ -569,6 +601,40 @@ fun ContenidoMisTarjetas(
     }
 }
 
+// =====================================================
+// CAMPOS DEL DIÁLOGO DE TARJETA
+// Configuración local de CampoTexto.
+// =====================================================
+
+@Composable
+private fun CampoTarjetaPerfil(
+    valor: String,
+    onValorCambia: (String) -> Unit,
+    etiqueta: String,
+    ayuda: String? = null,
+    placeholder: String? = null,
+    tipoTeclado: KeyboardType = KeyboardType.Text
+) {
+    CampoTexto(
+        valor = valor,
+        onValorCambia = onValorCambia,
+        etiqueta = etiqueta,
+        icono = null,
+        ayuda = ayuda,
+        placeholder = placeholder,
+        tipoTeclado = tipoTeclado,
+        forma = OutlinedTextFieldDefaults.shape,
+        colores = OutlinedTextFieldDefaults.colors(),
+        accionTeclado = ImeAction.Default,
+        reservarEspacioAyuda = false
+    )
+}
+
+// =====================================================
+// SECCIÓN: CONFIGURACIÓN
+// =====================================================
+
+@Suppress("DEPRECATION")
 @Composable
 fun ContenidoConfiguracion(
     notificacionesActivas: Boolean,
@@ -612,12 +678,16 @@ fun ContenidoConfiguracion(
         )
 
         if (!tema.sigueSistema) {
-            OutlinedButton(
+            BotonSecundario(
+                texto = "Usar tema del teléfono",
                 onClick = tema.usarTemaDelSistema,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Usar tema del teléfono")
-            }
+                modifier = Modifier.fillMaxWidth(),
+                altura = null,
+                forma = ButtonDefaults.outlinedShape,
+                colores = ButtonDefaults.outlinedButtonColors(),
+                borde = ButtonDefaults.outlinedButtonBorder,
+                relleno = ButtonDefaults.ContentPadding
+            )
         }
 
         OpcionSwitchItem(
@@ -634,6 +704,7 @@ fun ContenidoConfiguracion(
             fontSize = 11.sp
         )
 
+        // Se conserva Card pulsable para abrir los términos.
         Card(
             onClick = {
                 mostrarTerminos = true
@@ -674,22 +745,20 @@ fun ContenidoConfiguracion(
 
         Spacer(Modifier.height(8.dp))
 
-        Button(
+        BotonPrincipal(
+            texto = "Cerrar sesión actual",
             onClick = onCerrarSesion,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
+            modifier = Modifier.fillMaxWidth(),
+            altura = 48.dp,
+            forma = RoundedCornerShape(12.dp),
+            colores = ButtonDefaults.buttonColors(
                 containerColor = colores.error,
                 contentColor = colores.onError
-            )
-        ) {
-            Text(
-                text = "Cerrar sesión actual",
-                fontWeight = FontWeight.Bold
-            )
-        }
+            ),
+            elevacion = ButtonDefaults.buttonElevation(),
+            relleno = ButtonDefaults.ContentPadding,
+            pesoTexto = FontWeight.Bold
+        )
     }
 
     if (mostrarTerminos) {
@@ -697,9 +766,11 @@ fun ContenidoConfiguracion(
             onDismissRequest = {
                 mostrarTerminos = false
             },
+
             title = {
                 Text("Términos y condiciones")
             },
+
             text = {
                 Text(
                     text = "PagoFlex es una demostración académica. " +
@@ -708,6 +779,7 @@ fun ContenidoConfiguracion(
                             "Usa datos ficticios al vincular una tarjeta."
                 )
             },
+
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -721,6 +793,10 @@ fun ContenidoConfiguracion(
     }
 }
 
+// =====================================================
+// TARJETA DE INFORMACIÓN PERSONAL
+// =====================================================
+
 @Composable
 fun CardItemPerfil(
     label: String,
@@ -728,33 +804,36 @@ fun CardItemPerfil(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
+    TarjetaSeccion(
+        forma = RoundedCornerShape(12.dp),
+        colores = CardDefaults.cardColors(
             containerColor = colores.surface,
             contentColor = colores.onSurface
-        )
+        ),
+        elevacion = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        ),
+        relleno = PaddingValues(14.dp),
+        separacion = 4.dp
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = label,
-                color = colores.onSurfaceVariant,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
-            )
+        Text(
+            text = label,
+            color = colores.onSurfaceVariant,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
+        )
 
-            Text(
-                text = valor,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+        Text(
+            text = valor,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
+
+// =====================================================
+// OPCIÓN CON ÍCONO E INTERRUPTOR
+// =====================================================
 
 @Composable
 fun OpcionSwitchItem(
@@ -765,18 +844,23 @@ fun OpcionSwitchItem(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
+    TarjetaSeccion(
+        forma = RoundedCornerShape(12.dp),
+        colores = CardDefaults.cardColors(
             containerColor = colores.surface,
             contentColor = colores.onSurface
-        )
+        ),
+        elevacion = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        ),
+        relleno = PaddingValues(
+            horizontal = 14.dp,
+            vertical = 8.dp
+        ),
+        separacion = 0.dp
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -786,17 +870,18 @@ fun OpcionSwitchItem(
 
             Spacer(Modifier.width(12.dp))
 
-            Text(
-                text = titulo,
-                modifier = Modifier.weight(1f),
-                fontSize = 13.sp
-            )
-
-            Switch(
-                checked = activado,
-                onCheckedChange = {
+            InterruptorConTexto(
+                texto = titulo,
+                activado = activado,
+                onCambio = {
                     onCambiar()
-                }
+                },
+                modifier = Modifier.weight(1f),
+                filaPulsable = false,
+                rellenoVertical = 0.dp,
+                estiloTexto = LocalTextStyle.current.copy(
+                    fontSize = 13.sp
+                )
             )
         }
     }
