@@ -1,4 +1,3 @@
-
 package com.example.pagoflex.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -224,7 +223,7 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    "Cuentas de demostración",
+                    "Cuenta de demostración",
                     fontWeight = FontWeight.Bold,
                     color = Primario
                 )
@@ -235,17 +234,6 @@ fun LoginScreen(
                 )
                 Text(
                     "Contraseña: admin123",
-                    color = PrimarioOscuro,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                HorizontalDivider(color = PrimarioClaro)
-                Text(
-                    "Usuario: usuario@pagoflex.cl",
-                    color = PrimarioOscuro,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    "Contraseña: usuario123",
                     color = PrimarioOscuro,
                     style = MaterialTheme.typography.bodySmall
                 )
