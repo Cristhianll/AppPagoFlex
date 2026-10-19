@@ -16,74 +16,126 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 
-// =====================================================================
-//  ControlesSeleccion.kt  —  Checkbox, Switch y RadioButton con texto.
-//  ---------------------------------------------------------------------
-//  Los tres usan el contenedor ROW (fila): control a un lado, texto al otro.
-//     Row(verticalAlignment = Alignment.CenterVertically)  ~  display:flex; align-items:center
-//
-//  Truco de usabilidad: hacemos presionable TODA la fila (toggleable /
-//  selectable) y al control le pasamos onCheckedChange = null. Así el
-//  usuario puede tocar el texto y no solo el cuadradito.
-//  Un archivo puede tener VARIOS componentes pequeños relacionados.
-// =====================================================================
-
-/** Checkbox + texto (por ejemplo, aceptar términos). */
 @Composable
 fun CasillaConTexto(
     texto: String,
     marcado: Boolean,
     onCambio: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    habilitado: Boolean = true,
+    filaPulsable: Boolean = true,
+    rellenoVertical: Dp = Dimens.espacioMini,
+    separacionTexto: Dp = Dimens.espacioChico,
+    estiloTexto: TextStyle = MaterialTheme.typography.bodyMedium,
+    colorTexto: Color = Color.Unspecified,
+    textoOcupaEspacio: Boolean = false
 ) {
-    Row(
-        modifier = modifier
+    val modificadorFila = if (filaPulsable) {
+        modifier
             .fillMaxWidth()
-            .toggleable(value = marcado, onValueChange = onCambio, role = Role.Checkbox)
-            .padding(vertical = Dimens.espacioMini),
+            .toggleable(
+                value = marcado,
+                enabled = habilitado,
+                role = Role.Checkbox,
+                onValueChange = onCambio
+            )
+    } else {
+        modifier.fillMaxWidth()
+    }
+
+    Row(
+        modifier = modificadorFila.padding(
+            vertical = rellenoVertical
+        ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Checkbox(checked = marcado, onCheckedChange = null)
+        Checkbox(
+            checked = marcado,
+            enabled = habilitado,
+            onCheckedChange = if (filaPulsable) {
+                null
+            } else {
+                onCambio
+            }
+        )
+
+        val modificadorTexto = if (textoOcupaEspacio) {
+            Modifier
+                .weight(1f)
+                .padding(start = separacionTexto)
+        } else {
+            Modifier.padding(start = separacionTexto)
+        }
+
         Text(
             text = texto,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = Dimens.espacioChico)
+            style = estiloTexto,
+            color = colorTexto,
+            modifier = modificadorTexto
         )
     }
 }
 
-/** Texto + Switch (interruptor encendido/apagado). */
 @Composable
 fun InterruptorConTexto(
     texto: String,
     activado: Boolean,
     onCambio: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    habilitado: Boolean = true,
+    filaPulsable: Boolean = true,
+    rellenoVertical: Dp = Dimens.espacioMini,
+    estiloTexto: TextStyle = MaterialTheme.typography.bodyMedium,
+    colorTexto: Color = Color.Unspecified
 ) {
-    Row(
-        modifier = modifier
+    val modificadorFila = if (filaPulsable) {
+        modifier
             .fillMaxWidth()
-            .toggleable(value = activado, onValueChange = onCambio, role = Role.Switch)
-            .padding(vertical = Dimens.espacioMini),
+            .toggleable(
+                value = activado,
+                enabled = habilitado,
+                role = Role.Switch,
+                onValueChange = onCambio
+            )
+    } else {
+        modifier.fillMaxWidth()
+    }
+
+    Row(
+        modifier = modificadorFila.padding(
+            vertical = rellenoVertical
+        ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween  // texto a la izquierda, switch a la derecha
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = texto, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        Switch(checked = activado, onCheckedChange = null)
+        Text(
+            text = texto,
+            style = estiloTexto,
+            color = colorTexto,
+            modifier = Modifier.weight(1f)
+        )
+
+        Switch(
+            checked = activado,
+            enabled = habilitado,
+            onCheckedChange = if (filaPulsable) {
+                null
+            } else {
+                onCambio
+            }
+        )
     }
 }
 
-/**
- * Grupo de RadioButton: se elige UNA opción entre varias.
- * Es genérico <T>: sirve para cualquier lista (aquí la usamos con un enum).
- * @param textoDe función que convierte cada opción en el texto a mostrar.
- */
 @Composable
 fun <T> GrupoRadio(
     opciones: List<T>,
@@ -92,25 +144,34 @@ fun <T> GrupoRadio(
     textoDe: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    // Column = contenedor vertical (una opción debajo de otra)
-    Column(modifier = modifier.selectableGroup()) {
+    Column(
+        modifier = modifier.selectableGroup()
+    ) {
         opciones.forEach { opcion ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectable(
                         selected = opcion == seleccionada,
-                        onClick = { onSeleccionar(opcion) },
+                        onClick = {
+                            onSeleccionar(opcion)
+                        },
                         role = Role.RadioButton
                     )
                     .padding(vertical = Dimens.espacioMini),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                RadioButton(selected = opcion == seleccionada, onClick = null)
+                RadioButton(
+                    selected = opcion == seleccionada,
+                    onClick = null
+                )
+
                 Text(
                     text = textoDe(opcion),
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(start = Dimens.espacioChico)
+                    modifier = Modifier.padding(
+                        start = Dimens.espacioChico
+                    )
                 )
             }
         }
@@ -120,10 +181,22 @@ fun <T> GrupoRadio(
 @Preview(showBackground = true)
 @Composable
 private fun ControlesSeleccionPreview() {
-    PagoFlexTheme() {
-        Column(Modifier.padding(16.dp)) {
-            CasillaConTexto(texto = "Acepto los términos", marcado = true, onCambio = {})
-            InterruptorConTexto(texto = "Recibir novedades", activado = false, onCambio = {})
+    PagoFlexTheme {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            CasillaConTexto(
+                texto = "Acepto los términos",
+                marcado = true,
+                onCambio = {}
+            )
+
+            InterruptorConTexto(
+                texto = "Recibir novedades",
+                activado = false,
+                onCambio = {}
+            )
+
             GrupoRadio(
                 opciones = listOf("Uno", "Dos", "Tres"),
                 seleccionada = "Dos",

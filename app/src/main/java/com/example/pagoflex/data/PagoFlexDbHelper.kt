@@ -56,7 +56,7 @@ class PagoFlexDbHelper(context: Context) :
 
         insertarUsuario(
             db,
-            "Administrador Demo",
+            "Administrador",
             "admin@pagoflex.cl",
             "Admin123$",
             "ADMIN"
