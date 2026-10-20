@@ -23,11 +23,7 @@ import com.example.pagoflex.ui.theme.Blanco
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
 import com.example.pagoflex.ui.theme.PrimarioOscuro
 
-/**
- * Pantalla de inicio de sesión.
- * Recibe los datos y las acciones desde el coordinador.
- * No consulta la base de datos ni decide la navegación.
- */
+
 @Suppress("DEPRECATION")
 @Composable
 fun LoginScreen(
@@ -43,9 +39,7 @@ fun LoginScreen(
     val colores = MaterialTheme.colorScheme
     val tema = LocalControlTemaPagoFlex.current
 
-    // =====================================================
-    // COLORES DEL LOGIN
-    // =====================================================
+
 
     val colorFondo = if (tema.oscuro) {
         colores.background
@@ -71,9 +65,6 @@ fun LoginScreen(
     val colorTituloDemo = Acento
     val colorTextoDemo = Blanco.copy(alpha = 0.85f)
 
-    // =====================================================
-    // ESTADO LOCAL DE LA INTERFAZ
-    // =====================================================
 
     var mostrarClave by remember {
         mutableStateOf(false)
@@ -83,9 +74,7 @@ fun LoginScreen(
         mutableStateOf("")
     }
 
-    // =====================================================
-    // CONTENIDO DE LA PANTALLA
-    // =====================================================
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -102,7 +91,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // LOGO
+
 
             Surface(
                 modifier = Modifier.size(64.dp),
@@ -141,7 +130,7 @@ fun LoginScreen(
                 modifier = Modifier.height(24.dp)
             )
 
-            // TARJETA DEL FORMULARIO
+
 
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
@@ -162,7 +151,6 @@ fun LoginScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                // CORREO ELECTRÓNICO
 
                 CampoTexto(
                     valor = correo,
@@ -203,7 +191,7 @@ fun LoginScreen(
                     reservarEspacioError = false
                 )
 
-                // ERROR DE VALIDACIÓN LOCAL
+
 
                 if (errorLocal.isNotBlank()) {
                     Text(
@@ -212,7 +200,7 @@ fun LoginScreen(
                     )
                 }
 
-                // MENSAJE DEL COORDINADOR
+
 
                 if (mensaje.isNotBlank()) {
                     Text(
@@ -221,7 +209,7 @@ fun LoginScreen(
                     )
                 }
 
-                // INGRESAR
+
 
                 BotonPrincipal(
                     texto = if (ocupado) {
@@ -261,7 +249,7 @@ fun LoginScreen(
                     pesoTexto = FontWeight.Bold
                 )
 
-                // CREAR CUENTA
+
 
                 BotonSecundario(
                     texto = "Crear cuenta",
@@ -280,7 +268,7 @@ fun LoginScreen(
                 modifier = Modifier.height(20.dp)
             )
 
-            // ACCESOS DE DEMOSTRACIÓN
+
 
             Text(
                 text = "Accesos de demostración",

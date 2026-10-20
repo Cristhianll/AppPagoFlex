@@ -43,9 +43,7 @@ fun FotoPerfilEditable(
     val colores = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
 
-    // =====================================================
-    // ESTADO DEL COMPONENTE
-    // =====================================================
+
 
     var foto by remember(usuarioId) {
         mutableStateOf<Bitmap?>(null)
@@ -266,7 +264,6 @@ fun FotoPerfilEditable(
             relleno = ButtonDefaults.ContentPadding
         )
 
-        // MENSAJE DE RESULTADO
 
         if (mensaje.isNotBlank()) {
             Text(
@@ -277,9 +274,6 @@ fun FotoPerfilEditable(
         }
     }
 
-    // =====================================================
-    // EXPLICACIÓN DEL PERMISO DE CÁMARA
-    // =====================================================
 
     if (mostrarExplicacion) {
         AlertDialog(
@@ -325,9 +319,7 @@ fun FotoPerfilEditable(
         )
     }
 
-    // =====================================================
-    // AVISO DE PERMISO DENEGADO
-    // =====================================================
+
 
     if (mostrarPermisoDenegado) {
         AlertDialog(

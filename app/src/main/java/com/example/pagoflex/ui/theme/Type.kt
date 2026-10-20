@@ -7,9 +7,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-//TIPOGRAFIA PARA MI PROYECTO
-// LA PROPIEDAD DP ES LA FUSION DE PX Y % DE CSS , SE ADAPTA ALA PANTALLA
-//SP = SE ADAPATA AL TAMAÑO DE TEXTO QUE SE ADAPTA EL TELEFONO QUE TIENE PREDEMINADO EL TEXTO
 
 val Tipografia = Typography(
 
@@ -36,6 +33,6 @@ val Tipografia = Typography(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp,
-        letterSpacing = 0.3.sp // espacio entre letras
+        letterSpacing = 0.3.sp
     )
 )

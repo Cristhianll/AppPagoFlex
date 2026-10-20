@@ -46,10 +46,6 @@ fun AdminScreen(
         )
     }
 
-    // =====================================================
-    // ESTADO DE LA PANTALLA
-    // =====================================================
-
     var mostrarConfiguracion by remember {
         mutableStateOf(false)
     }
@@ -106,9 +102,6 @@ fun AdminScreen(
         mutableStateOf(false)
     }
 
-    // =====================================================
-    // FORMULARIO Y DATOS
-    // =====================================================
 
     fun limpiarFormulario() {
         deudaEditandoId = null
@@ -324,9 +317,7 @@ fun AdminScreen(
         }
     }
 
-    // =====================================================
-    // CARGA INICIAL
-    // =====================================================
+
 
     LaunchedEffect(repository) {
         ocupado = true
@@ -347,9 +338,7 @@ fun AdminScreen(
         it["id"] == usuarioSeleccionadoId
     }
 
-    // =====================================================
-    // CONTENIDO DE LA PANTALLA
-    // =====================================================
+
 
     Scaffold(
         containerColor = colores.background,
@@ -452,7 +441,7 @@ fun AdminScreen(
                 )
             }
 
-            // INDICADOR Y MENSAJES
+
 
             if (ocupado || mensaje.isNotBlank()) {
                 item {
@@ -479,7 +468,7 @@ fun AdminScreen(
                 }
             }
 
-            // FORMULARIO
+
 
             item {
                 Card(
@@ -513,7 +502,7 @@ fun AdminScreen(
                             )
                         }
 
-                        // SELECTOR DE USUARIO
+
 
                         ExposedDropdownMenuBox(
                             expanded = expandido,
@@ -572,7 +561,7 @@ fun AdminScreen(
                             }
                         }
 
-                        // CAMPOS REUTILIZABLES
+
 
                         CampoAdmin(
                             valor = concepto,
@@ -614,7 +603,7 @@ fun AdminScreen(
                             ayuda = "Formato AAAA-MM-DD. Debe ser una fecha real."
                         )
 
-                        // GUARDAR
+
 
                         BotonPrincipal(
                             texto = if (deudaEditandoId == null) {
@@ -639,7 +628,7 @@ fun AdminScreen(
                             pesoTexto = FontWeight.Bold
                         )
 
-                        // CANCELAR EDICIÓN
+
 
                         if (deudaEditandoId != null) {
                             BotonSecundarioAdmin(
@@ -657,7 +646,7 @@ fun AdminScreen(
                 }
             }
 
-            // ENCABEZADO DE DEUDAS
+
 
             item {
                 Text(
@@ -677,7 +666,7 @@ fun AdminScreen(
                 }
             }
 
-            // LISTADO DE DEUDAS
+
 
             items(
                 items = deudas,
@@ -797,9 +786,7 @@ fun AdminScreen(
         }
     }
 
-    // =====================================================
-    // CONFIRMACIÓN DE ELIMINACIÓN
-    // =====================================================
+
 
     deudaAEliminar?.let { deuda ->
         AlertDialog(
@@ -845,9 +832,6 @@ fun AdminScreen(
         )
     }
 
-    // =====================================================
-    // CONFIGURACIÓN DEL TEMA
-    // =====================================================
 
     if (mostrarConfiguracion) {
         AlertDialog(
@@ -936,10 +920,6 @@ fun AdminScreen(
     }
 }
 
-// =====================================================
-// CONFIGURACIÓN DE LOS CAMPOS DE ESTA PANTALLA
-// Usa CampoTexto sin cambiar su estilo global.
-// =====================================================
 
 @Composable
 private fun CampoAdmin(
@@ -967,10 +947,6 @@ private fun CampoAdmin(
     )
 }
 
-// =====================================================
-// CONFIGURACIÓN DE LOS BOTONES SECUNDARIOS DEL ADMIN
-// Conserva los valores Material usados anteriormente.
-// =====================================================
 
 @Suppress("DEPRECATION")
 @Composable

@@ -89,7 +89,7 @@ class PagoFlexDbHelper(context: Context) :
         oldVersion: Int,
         newVersion: Int
     ) {
-        // Esta implementación no modifica la estructura existente.
+
     }
 
     private fun insertarUsuario(
