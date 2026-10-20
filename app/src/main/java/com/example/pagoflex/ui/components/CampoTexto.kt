@@ -8,8 +8,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -20,64 +22,97 @@ import com.example.pagoflex.ui.styles.EstilosCampo
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 
-// =====================================================================
-//  CampoTexto.kt  —  CAMPO DE TEXTO REUTILIZABLE (el <input> de HTML)
-//  ---------------------------------------------------------------------
-//  IMPORTANTE: en Compose un campo NO guarda su propio texto.
-//   - "valor" es lo que se muestra (viene del estado del ViewModel).
-//   - "onValorCambia" avisa cada vez que el usuario escribe una letra.
-//  Si no actualizamos el estado en onValorCambia, el campo NO cambia.
-//  Esto se llama "estado elevado" (state hoisting).
-// =====================================================================
-
-/**
- * @param error      mensaje de error bajo el campo; null = sin error.
- * @param tipoTeclado Text, Email, Number, Phone... (cambia el teclado del celular)
- */
 @Composable
 fun CampoTexto(
     valor: String,
     onValorCambia: (String) -> Unit,
     etiqueta: String,
-    @DrawableRes icono: Int,
+    @DrawableRes icono: Int? = null,
     modifier: Modifier = Modifier,
     error: String? = null,
-    tipoTeclado: KeyboardType = KeyboardType.Text
+    tipoTeclado: KeyboardType = KeyboardType.Text,
+    habilitado: Boolean = true,
+    ayuda: String? = null,
+    placeholder: String? = null,
+    forma: Shape = EstilosCampo.forma,
+    colores: TextFieldColors = EstilosCampo.colores(),
+    accionTeclado: ImeAction = ImeAction.Next,
+    reservarEspacioAyuda: Boolean = true,
+    mostrarMensajeError: Boolean = true
 ) {
+    val textoApoyo = if (mostrarMensajeError) {
+        error ?: ayuda
+    } else {
+        ayuda
+    }
+
     OutlinedTextField(
         value = valor,
         onValueChange = onValorCambia,
         modifier = modifier.fillMaxWidth(),
-        label = { Text(etiqueta) },                       // texto flotante (como <label>)
-        leadingIcon = {                                   // ícono a la izquierda
-            Icon(
-                painter = painterResource(id = icono),
-                contentDescription = null,
-                modifier = Modifier.size(Dimens.tamanoIcono)
-            )
+        enabled = habilitado,
+
+        label = {
+            Text(etiqueta)
         },
-        isError = error != null,                          // borde rojo si hay error
-        supportingText = { if (error != null) Text(error) }, // texto de ayuda bajo el campo
-        singleLine = true,                                // una sola línea
+
+        placeholder = if (placeholder != null) {
+            {
+                Text(placeholder)
+            }
+        } else {
+            null
+        },
+
+        leadingIcon = if (icono != null) {
+            {
+                Icon(
+                    painter = painterResource(id = icono),
+                    contentDescription = null,
+                    modifier = Modifier.size(Dimens.tamanoIcono)
+                )
+            }
+        } else {
+            null
+        },
+
+        isError = error != null,
+
+        supportingText = if (
+            textoApoyo != null || reservarEspacioAyuda
+        ) {
+            {
+                if (textoApoyo != null) {
+                    Text(textoApoyo)
+                }
+            }
+        } else {
+            null
+        },
+
+        singleLine = true,
+
         keyboardOptions = KeyboardOptions(
             keyboardType = tipoTeclado,
-            imeAction = ImeAction.Next                    // botón "Siguiente" en el teclado
+            imeAction = accionTeclado
         ),
-        shape = EstilosCampo.forma,
-        colors = EstilosCampo.colores()
+
+        shape = forma,
+        colors = colores
     )
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun CampoTextoPreview() {
-    PagoFlexTheme() {
+    PagoFlexTheme {
         CampoTexto(
             valor = "ana@",
             onValorCambia = {},
             etiqueta = "Correo electrónico",
             icono = R.drawable.ic_correo,
             error = "Ingresa un correo válido",
+            tipoTeclado = KeyboardType.Email,
             modifier = Modifier.padding(16.dp)
         )
     }

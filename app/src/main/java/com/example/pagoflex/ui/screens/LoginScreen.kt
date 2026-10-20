@@ -1,245 +1,302 @@
 package com.example.pagoflex.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
+import android.util.Patterns
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.pagoflex.ui.theme.*
+import com.example.pagoflex.ui.components.BotonPrincipal
+import com.example.pagoflex.ui.components.BotonSecundario
+import com.example.pagoflex.ui.components.CampoContrasena
+import com.example.pagoflex.ui.components.CampoTexto
+import com.example.pagoflex.ui.components.TarjetaSeccion
+import com.example.pagoflex.ui.theme.Acento
+import com.example.pagoflex.ui.theme.Blanco
+import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
+import com.example.pagoflex.ui.theme.PrimarioOscuro
 
+/**
+ * Pantalla de inicio de sesión.
+ * Recibe los datos y las acciones desde el coordinador.
+ * No consulta la base de datos ni decide la navegación.
+ */
+@Suppress("DEPRECATION")
 @Composable
 fun LoginScreen(
-    mensaje: String = "",
-    onIngresar: (String, String) -> Unit,
+    correo: String,
+    clave: String,
+    mensaje: String,
+    ocupado: Boolean,
+    onCorreo: (String) -> Unit,
+    onClave: (String) -> Unit,
+    onEntrar: () -> Unit,
     onRegistro: () -> Unit
 ) {
-    var correo by remember { mutableStateOf("") }
-    var clave by remember { mutableStateOf("") }
-    var mostrarClave by remember { mutableStateOf(false) }
-    var errorLocal by remember { mutableStateOf("") }
+    val colores = MaterialTheme.colorScheme
+    val tema = LocalControlTemaPagoFlex.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    // =====================================================
+    // COLORES DEL LOGIN
+    // =====================================================
+
+    val colorFondo = if (tema.oscuro) {
+        colores.background
+    } else {
+        PrimarioOscuro
+    }
+
+    val colorFondoLogo = Acento
+    val colorLetraLogo = PrimarioOscuro
+
+    val colorTitulo = Blanco
+    val colorSubtitulo = Blanco.copy(alpha = 0.85f)
+
+    val colorTarjeta = colores.surface
+    val colorTextoTarjeta = colores.onSurface
+
+    val colorMensaje = colores.onSurfaceVariant
+    val colorError = colores.error
+
+    val colorBotonIngresar = colores.secondary
+    val colorTextoBotonIngresar = colores.onSecondary
+
+    val colorTituloDemo = Acento
+    val colorTextoDemo = Blanco.copy(alpha = 0.85f)
+
+    // =====================================================
+    // ESTADO LOCAL DE LA INTERFAZ
+    // =====================================================
+
+    var mostrarClave by remember {
+        mutableStateOf(false)
+    }
+
+    var errorLocal by remember {
+        mutableStateOf("")
+    }
+
+    // =====================================================
+    // CONTENIDO DE LA PANTALLA
+    // =====================================================
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = colorFondo,
+        contentColor = Blanco
     ) {
-        Spacer(Modifier.height(28.dp))
-
-        Box(
+        Column(
             modifier = Modifier
-                .size(88.dp)
-                .background(Primario, CircleShape),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .systemBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.AccountBalanceWallet,
-                contentDescription = "Logo PagoFlex",
-                tint = Acento,
-                modifier = Modifier.size(48.dp)
+            // LOGO
+
+            Surface(
+                modifier = Modifier.size(64.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = colorFondoLogo,
+                contentColor = colorLetraLogo
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "P",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
             )
-        }
 
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "PagoFlex",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = Primario
-        )
-
-        Text(
-            text = "Tus pagos, más simples.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(Modifier.height(28.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 3.dp
+            Text(
+                text = "PagoFlex",
+                color = colorTitulo,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold
             )
-        ) {
-            Column(
-                modifier = Modifier.padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+
+            Text(
+                text = "Tus pagos, más simples",
+                color = colorSubtitulo
+            )
+
+            Spacer(
+                modifier = Modifier.height(24.dp)
+            )
+
+            // TARJETA DEL FORMULARIO
+
+            TarjetaSeccion(
+                forma = RoundedCornerShape(24.dp),
+                colores = CardDefaults.cardColors(
+                    containerColor = colorTarjeta,
+                    contentColor = colorTextoTarjeta
+                ),
+                elevacion = CardDefaults.cardElevation(
+                    defaultElevation = 0.dp
+                ),
+                relleno = PaddingValues(20.dp),
+                separacion = 14.dp
             ) {
                 Text(
-                    text = "Bienvenido",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Iniciar sesión",
+                    color = colorTextoTarjeta,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
 
-                Text(
-                    text = "Ingresa a tu cuenta para continuar.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // CORREO ELECTRÓNICO
 
-                OutlinedTextField(
-                    value = correo,
-                    onValueChange = {
-                        correo = it
+                CampoTexto(
+                    valor = correo,
+                    onValorCambia = { nuevoCorreo ->
                         errorLocal = ""
+                        onCorreo(nuevoCorreo)
+                    },
+                    etiqueta = "Correo electrónico",
+                    icono = null,
+                    modifier = Modifier.fillMaxWidth(),
+                    tipoTeclado = KeyboardType.Email,
+                    habilitado = !ocupado,
+                    forma = OutlinedTextFieldDefaults.shape,
+                    colores = OutlinedTextFieldDefaults.colors(),
+                    accionTeclado = ImeAction.Default,
+                    reservarEspacioAyuda = false
+                )
+
+                // CONTRASEÑA
+
+                CampoContrasena(
+                    valor = clave,
+                    onValorCambia = { nuevaClave ->
+                        errorLocal = ""
+                        onClave(nuevaClave)
+                    },
+                    etiqueta = "Contraseña",
+                    visible = mostrarClave,
+                    onAlternarVisible = {
+                        mostrarClave = !mostrarClave
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Correo electrónico") },
-                    placeholder = { Text("nombre@correo.cl") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    isError = errorLocal.isNotEmpty() &&
-                            !android.util.Patterns.EMAIL_ADDRESS
-                                .matcher(correo.trim()).matches()
+                    habilitado = !ocupado,
+                    mostrarCandado = false,
+                    usarTextoVisibilidad = true,
+                    forma = OutlinedTextFieldDefaults.shape,
+                    colores = OutlinedTextFieldDefaults.colors(),
+                    reservarEspacioError = false
                 )
 
-                OutlinedTextField(
-                    value = clave,
-                    onValueChange = {
-                        clave = it
-                        errorLocal = ""
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Contraseña") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    visualTransformation = if (mostrarClave) {
-                        VisualTransformation.None
+                // ERROR DE VALIDACIÓN LOCAL
+
+                if (errorLocal.isNotBlank()) {
+                    Text(
+                        text = errorLocal,
+                        color = colorError
+                    )
+                }
+
+                // MENSAJE DEL COORDINADOR
+
+                if (mensaje.isNotBlank()) {
+                    Text(
+                        text = mensaje,
+                        color = colorMensaje
+                    )
+                }
+
+                // INGRESAR
+
+                BotonPrincipal(
+                    texto = if (ocupado) {
+                        "Ingresando..."
                     } else {
-                        PasswordVisualTransformation()
+                        "Ingresar"
                     },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { mostrarClave = !mostrarClave }
-                        ) {
-                            Icon(
-                                imageVector = if (mostrarClave) {
-                                    Icons.Default.VisibilityOff
-                                } else {
-                                    Icons.Default.Visibility
-                                },
-                                contentDescription = if (mostrarClave) {
-                                    "Ocultar contraseña"
-                                } else {
-                                    "Mostrar contraseña"
-                                }
-                            )
-                        }
-                    }
-                )
-
-                AnimatedVisibility(
-                    visible = errorLocal.isNotEmpty() ||
-                            mensaje.isNotEmpty()
-                ) {
-                    Text(
-                        text = if (errorLocal.isNotEmpty()) {
-                            errorLocal
-                        } else {
-                            mensaje
-                        },
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                Button(
                     onClick = {
-                        when {
-                            !android.util.Patterns.EMAIL_ADDRESS
-                                .matcher(correo.trim()).matches() ->
-                                errorLocal = "Ingresa un correo válido."
-
-                            clave.isBlank() ->
-                                errorLocal = "Ingresa tu contraseña."
-
-                            else -> {
-                                errorLocal = ""
-                                onIngresar(correo.trim(), clave)
+                        errorLocal = when {
+                            !Patterns.EMAIL_ADDRESS
+                                .matcher(correo.trim())
+                                .matches() -> {
+                                "Ingresa un correo válido."
                             }
+
+                            clave.isBlank() -> {
+                                "Ingresa tu contraseña."
+                            }
+
+                            else -> ""
+                        }
+
+                        if (errorLocal.isBlank()) {
+                            onEntrar()
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Primario
-                    )
-                ) {
-                    Text(
-                        "Iniciar sesión",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                    habilitado = !ocupado,
+                    colores = ButtonDefaults.buttonColors(
+                        containerColor = colorBotonIngresar,
+                        contentColor = colorTextoBotonIngresar
+                    ),
+                    forma = RoundedCornerShape(12.dp),
+                    altura = 50.dp,
+                    elevacion = ButtonDefaults.buttonElevation(),
+                    relleno = ButtonDefaults.ContentPadding,
+                    pesoTexto = FontWeight.Bold
+                )
 
-                OutlinedButton(
+                // CREAR CUENTA
+
+                BotonSecundario(
+                    texto = "Crear cuenta",
                     onClick = onRegistro,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Text("Crear una cuenta")
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                    habilitado = !ocupado,
+                    colores = ButtonDefaults.outlinedButtonColors(),
+                    borde = ButtonDefaults.outlinedButtonBorder,
+                    forma = RoundedCornerShape(12.dp),
+                    altura = 50.dp,
+                    relleno = ButtonDefaults.ContentPadding
+                )
             }
-        }
 
-        Spacer(Modifier.height(20.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = PrimarioClaro
+            Spacer(
+                modifier = Modifier.height(20.dp)
             )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    "Cuenta de demostración",
-                    fontWeight = FontWeight.Bold,
-                    color = Primario
-                )
-                Text(
-                    "Administrador: admin@pagoflex.cl",
-                    color = PrimarioOscuro,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    "Contraseña: admin123",
-                    color = PrimarioOscuro,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
 
-        Spacer(Modifier.height(28.dp))
+            // ACCESOS DE DEMOSTRACIÓN
+
+            Text(
+                text = "Accesos de demostración",
+                color = colorTituloDemo,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = "Admin: admin@pagoflex.cl",
+                color = colorTextoDemo
+            )
+
+            Text(
+                text = "Usuario: emilia@pagoflex.cl",
+                color = colorTextoDemo
+            )
+        }
     }
 }

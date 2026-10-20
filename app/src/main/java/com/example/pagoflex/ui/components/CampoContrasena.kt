@@ -8,8 +8,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -22,15 +25,6 @@ import com.example.pagoflex.ui.styles.EstilosCampo
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 
-// =====================================================================
-//  CampoContrasena.kt  —  Campo con puntos (••••) y botón "ojo".
-//  ---------------------------------------------------------------------
-//  visualTransformation cambia CÓMO se muestra el texto, no lo que vale:
-//   - PasswordVisualTransformation() -> ••••••
-//   - VisualTransformation.None      -> texto normal
-//  Si la contraseña se ve o no es ESTADO: lo decide el ViewModel.
-// =====================================================================
-
 @Composable
 fun CampoContrasena(
     valor: String,
@@ -39,47 +33,115 @@ fun CampoContrasena(
     visible: Boolean,
     onAlternarVisible: () -> Unit,
     modifier: Modifier = Modifier,
-    error: String? = null
+    error: String? = null,
+    habilitado: Boolean = true,
+    mostrarCandado: Boolean = true,
+    usarTextoVisibilidad: Boolean = false,
+    forma: Shape = EstilosCampo.forma,
+    colores: TextFieldColors = EstilosCampo.colores(),
+    reservarEspacioError: Boolean = true,
+    mostrarMensajeError: Boolean = true
 ) {
+    val mostrarApoyo = reservarEspacioError ||
+            (mostrarMensajeError && error != null)
+
     OutlinedTextField(
         value = valor,
         onValueChange = onValorCambia,
         modifier = modifier.fillMaxWidth(),
-        label = { Text(etiqueta) },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(R.drawable.ic_candado),
-                contentDescription = null,
-                modifier = Modifier.size(Dimens.tamanoIcono)
-            )
+        enabled = habilitado,
+
+        label = {
+            Text(etiqueta)
         },
-        trailingIcon = {                                   // ícono a la DERECHA, presionable
-            IconButton(onClick = onAlternarVisible) {
+
+        leadingIcon = if (mostrarCandado) {
+            {
                 Icon(
                     painter = painterResource(
-                        if (visible) R.drawable.ic_ojo_tachado else R.drawable.ic_ojo
+                        id = R.drawable.ic_candado
                     ),
-                    contentDescription = stringResource(
-                        if (visible) R.string.cd_ocultar_contrasena else R.string.cd_mostrar_contrasena
-                    ),
+                    contentDescription = null,
                     modifier = Modifier.size(Dimens.tamanoIcono)
                 )
             }
+        } else {
+            null
         },
-        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+
+        trailingIcon = {
+            if (usarTextoVisibilidad) {
+                TextButton(
+                    onClick = onAlternarVisible,
+                    enabled = habilitado
+                ) {
+                    Text(
+                        text = if (visible) {
+                            "Ocultar"
+                        } else {
+                            "Ver"
+                        }
+                    )
+                }
+            } else {
+                IconButton(
+                    onClick = onAlternarVisible,
+                    enabled = habilitado
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (visible) {
+                                R.drawable.ic_ojo_tachado
+                            } else {
+                                R.drawable.ic_ojo
+                            }
+                        ),
+                        contentDescription = stringResource(
+                            id = if (visible) {
+                                R.string.cd_ocultar_contrasena
+                            } else {
+                                R.string.cd_mostrar_contrasena
+                            }
+                        ),
+                        modifier = Modifier.size(Dimens.tamanoIcono)
+                    )
+                }
+            }
+        },
+
+        visualTransformation = if (visible) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        },
+
         isError = error != null,
-        supportingText = { if (error != null) Text(error) },
+
+        supportingText = if (mostrarApoyo) {
+            {
+                if (mostrarMensajeError && error != null) {
+                    Text(error)
+                }
+            }
+        } else {
+            null
+        },
+
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        shape = EstilosCampo.forma,
-        colors = EstilosCampo.colores()
+
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password
+        ),
+
+        shape = forma,
+        colors = colores
     )
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun CampoContrasenaPreview() {
-    PagoFlexTheme() {
+    PagoFlexTheme {
         CampoContrasena(
             valor = "secreto",
             onValorCambia = {},

@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+@Suppress("DEPRECATION")
 @Composable
 fun FotoPerfilEditable(
     usuarioId: Int,
@@ -41,6 +42,10 @@ fun FotoPerfilEditable(
     val context = LocalContext.current
     val colores = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
+
+    // =====================================================
+    // ESTADO DEL COMPONENTE
+    // =====================================================
 
     var foto by remember(usuarioId) {
         mutableStateOf<Bitmap?>(null)
@@ -66,6 +71,8 @@ fun FotoPerfilEditable(
         mutableStateOf(false)
     }
 
+    // ARCHIVO DE FOTO POR USUARIO
+
     val archivoFoto = remember(usuarioId, context) {
         File(
             context.filesDir,
@@ -73,7 +80,10 @@ fun FotoPerfilEditable(
         )
     }
 
-    // Carga la foto que el usuario haya guardado anteriormente.
+    // =====================================================
+    // CARGA DE LA FOTO GUARDADA
+    // =====================================================
+
     LaunchedEffect(usuarioId, archivoFoto) {
         cargando = true
 
@@ -96,7 +106,10 @@ fun FotoPerfilEditable(
         }
     }
 
-    // Recibe una imagen pequeña desde la aplicación de cámara.
+    // =====================================================
+    // RESULTADO DE LA CÁMARA Y GUARDADO DE LA FOTO
+    // =====================================================
+
     val camaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { imagen ->
@@ -134,13 +147,18 @@ fun FotoPerfilEditable(
                 } catch (cancelacion: CancellationException) {
                     throw cancelacion
                 } catch (_: Exception) {
-                    mensaje = "No se pudo guardar la foto. Intenta nuevamente."
+                    mensaje = "No se pudo guardar la foto. " +
+                            "Intenta nuevamente."
                 } finally {
                     guardando = false
                 }
             }
         }
     }
+
+    // =====================================================
+    // APERTURA DE LA CÁMARA
+    // =====================================================
 
     fun abrirCamara() {
         try {
@@ -149,11 +167,15 @@ fun FotoPerfilEditable(
         } catch (_: ActivityNotFoundException) {
             mensaje = "No hay una aplicación de cámara disponible."
         } catch (_: SecurityException) {
-            mensaje = "No se pudo acceder a la cámara. Revisa el permiso."
+            mensaje = "No se pudo acceder a la cámara. " +
+                    "Revisa el permiso."
         }
     }
 
-    // Recibe la respuesta del usuario al permiso de Android.
+    // =====================================================
+    // RESPUESTA A LA SOLICITUD DE PERMISO
+    // =====================================================
+
     val permisoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { concedido ->
@@ -164,11 +186,17 @@ fun FotoPerfilEditable(
         }
     }
 
+    // =====================================================
+    // PRESENTACIÓN DEL COMPONENTE
+    // =====================================================
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // FOTO O INICIAL DEL USUARIO
+
         Box(
             modifier = Modifier
                 .size(88.dp)
@@ -181,7 +209,8 @@ fun FotoPerfilEditable(
             if (imagenActual != null) {
                 Image(
                     bitmap = imagenActual.asImageBitmap(),
-                    contentDescription = "Foto de perfil de $nombreUsuario",
+                    contentDescription =
+                        "Foto de perfil de $nombreUsuario",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -198,14 +227,25 @@ fun FotoPerfilEditable(
             }
         }
 
+        // INDICADOR DE CARGA
+
         if (cargando || guardando) {
             CircularProgressIndicator(
                 modifier = Modifier.size(24.dp)
             )
         }
 
-        OutlinedButton(
-            enabled = usuarioId > 0 && !cargando && !guardando,
+        // BOTÓN REUTILIZABLE
+
+        BotonSecundario(
+            texto = if (guardando) {
+                "Guardando foto..."
+            } else {
+                "Editar foto de perfil"
+            },
+            habilitado = usuarioId > 0 &&
+                    !cargando &&
+                    !guardando,
             onClick = {
                 val permisoConcedido =
                     ContextCompat.checkSelfPermission(
@@ -218,16 +258,15 @@ fun FotoPerfilEditable(
                 } else {
                     mostrarExplicacion = true
                 }
-            }
-        ) {
-            Text(
-                text = if (guardando) {
-                    "Guardando foto..."
-                } else {
-                    "Editar foto de perfil"
-                }
-            )
-        }
+            },
+            altura = null,
+            forma = ButtonDefaults.outlinedShape,
+            colores = ButtonDefaults.outlinedButtonColors(),
+            borde = ButtonDefaults.outlinedButtonBorder,
+            relleno = ButtonDefaults.ContentPadding
+        )
+
+        // MENSAJE DE RESULTADO
 
         if (mensaje.isNotBlank()) {
             Text(
@@ -238,14 +277,20 @@ fun FotoPerfilEditable(
         }
     }
 
+    // =====================================================
+    // EXPLICACIÓN DEL PERMISO DE CÁMARA
+    // =====================================================
+
     if (mostrarExplicacion) {
         AlertDialog(
             onDismissRequest = {
                 mostrarExplicacion = false
             },
+
             title = {
                 Text("Permiso de cámara")
             },
+
             text = {
                 Text(
                     text = "PagoFlex solicita acceso a la cámara para " +
@@ -253,6 +298,7 @@ fun FotoPerfilEditable(
                             "La imagen se guardará en este dispositivo."
                 )
             },
+
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -266,6 +312,7 @@ fun FotoPerfilEditable(
                     Text("Continuar")
                 }
             },
+
             dismissButton = {
                 TextButton(
                     onClick = {
@@ -278,22 +325,30 @@ fun FotoPerfilEditable(
         )
     }
 
+    // =====================================================
+    // AVISO DE PERMISO DENEGADO
+    // =====================================================
+
     if (mostrarPermisoDenegado) {
         AlertDialog(
             onDismissRequest = {
                 mostrarPermisoDenegado = false
             },
+
             title = {
                 Text("Cámara no autorizada")
             },
+
             text = {
                 Text(
                     text = "No se cambió tu foto. Puedes seguir usando " +
                             "la aplicación sin autorizar la cámara.\n\n" +
                             "Si Android ya no muestra la solicitud, " +
-                            "puedes revisar el permiso en los ajustes de PagoFlex."
+                            "puedes revisar el permiso en los ajustes " +
+                            "de PagoFlex."
                 )
             },
+
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -317,6 +372,7 @@ fun FotoPerfilEditable(
                     Text("Abrir ajustes")
                 }
             },
+
             dismissButton = {
                 TextButton(
                     onClick = {
