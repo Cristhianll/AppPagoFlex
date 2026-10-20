@@ -14,9 +14,6 @@ import com.example.pagoflex.ui.components.BotonSecundario
 import java.text.NumberFormat
 import java.util.Locale
 
-// =====================================================
-// PRESENTACIÓN INFORMATIVA REUTILIZABLE
-// =====================================================
 
 @Suppress("DEPRECATION")
 @Composable
@@ -92,10 +89,6 @@ fun PantallaInformativaPago(
     }
 }
 
-// =====================================================
-// RESULTADO DEL PAGO REGISTRADO
-// Prepara los textos que antes construía PagoFlexApp.
-// =====================================================
 
 @Composable
 fun ResultadoPagoScreen(

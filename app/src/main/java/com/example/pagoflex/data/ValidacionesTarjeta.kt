@@ -4,11 +4,7 @@ import java.util.Calendar
 
 object ValidacionesTarjeta {
 
-    /**
-     * Valida un vencimiento en formato MM/AA.
-     *
-     * La tarjeta sigue vigente durante todo el mes indicado.
-     */
+
     fun vencimientoVigente(vencimiento: String): Boolean {
         if (
             !vencimiento.matches(

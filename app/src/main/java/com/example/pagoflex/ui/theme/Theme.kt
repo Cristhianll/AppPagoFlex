@@ -99,7 +99,7 @@ fun PagoFlexTheme(
         )
     }
 
-    // null significa que todavía se utiliza el tema del sistema.
+
     var eleccionManual by remember(preferencias) {
         mutableStateOf<Boolean?>(
             if (preferencias.contains("modo_oscuro")) {
@@ -133,8 +133,7 @@ fun PagoFlexTheme(
         }
     )
 
-    // Se conserva dynamicColor en la firma por compatibilidad,
-    // pero se usan siempre los colores de identidad de PagoFlex.
+
     CompositionLocalProvider(
         LocalControlTemaPagoFlex provides controlTema
     ) {

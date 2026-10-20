@@ -44,7 +44,6 @@ fun FormularioScreen(
             .background(colores.background)
             .statusBarsPadding()
     ) {
-        // VOLVER AL LOGIN
 
         TextButton(
             onClick = onVolverAlLogin,
@@ -53,7 +52,6 @@ fun FormularioScreen(
             Text("← Volver al inicio de sesión")
         }
 
-        // PROGRESO
 
         if (ocupado) {
             LinearProgressIndicator(
@@ -99,9 +97,7 @@ fun FormularioScreen(
     }
 }
 
-// =====================================================
-// CONTENIDO DEL FORMULARIO
-// =====================================================
+
 
 @Suppress("DEPRECATION")
 @Composable
@@ -124,7 +120,7 @@ private fun ContenidoFormulario(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // LOGO Y NOMBRE
+
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -172,7 +168,7 @@ private fun ContenidoFormulario(
                 fontSize = 15.sp
             )
 
-            // DATOS PERSONALES
+
 
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
@@ -193,7 +189,6 @@ private fun ContenidoFormulario(
                     fontWeight = FontWeight.Bold
                 )
 
-                // NOMBRE
 
                 CampoTexto(
                     valor = uiState.nombre,
@@ -211,7 +206,6 @@ private fun ContenidoFormulario(
                     ErrorFormulario(texto = it)
                 }
 
-                // CORREO
 
                 CampoTexto(
                     valor = uiState.correo,
@@ -230,7 +224,7 @@ private fun ContenidoFormulario(
                     ErrorFormulario(texto = it)
                 }
 
-                // CONTRASEÑA
+
 
                 CampoContrasena(
                     valor = uiState.contrasena,
@@ -252,7 +246,7 @@ private fun ContenidoFormulario(
                     ErrorFormulario(texto = it)
                 }
 
-                // REPETIR CONTRASEÑA
+
 
                 CampoContrasena(
                     valor = uiState.repetirContrasena,
@@ -275,7 +269,7 @@ private fun ContenidoFormulario(
                 }
             }
 
-            // PREFERENCIAS
+
 
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
@@ -309,7 +303,6 @@ private fun ContenidoFormulario(
                 )
             }
 
-            // TÉRMINOS Y CONDICIONES
 
             Column(
                 modifier = Modifier.fillMaxWidth()
@@ -333,7 +326,6 @@ private fun ContenidoFormulario(
                 }
             }
 
-            // ACCIONES
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -374,9 +366,6 @@ private fun ContenidoFormulario(
     }
 }
 
-// =====================================================
-// MENSAJE DE ERROR DEL FORMULARIO
-// =====================================================
 
 @Composable
 private fun ErrorFormulario(

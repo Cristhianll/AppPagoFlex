@@ -38,9 +38,6 @@ fun PagoFlexApp(
     val formularioState by formularioViewModel.uiState.collectAsState()
     val pagoState by pagoViewModel.uiState.collectAsState()
 
-    // =====================================================
-    // SESIÓN Y NAVEGACIÓN
-    // =====================================================
 
     var sesion by remember {
         mutableStateOf<Map<String, String>?>(null)
@@ -54,9 +51,6 @@ fun PagoFlexApp(
         mutableStateOf("inicio")
     }
 
-    // =====================================================
-    // LOGIN Y MENSAJES
-    // =====================================================
 
     var correo by remember {
         mutableStateOf("")
@@ -70,9 +64,7 @@ fun PagoFlexApp(
         mutableStateOf("")
     }
 
-    // =====================================================
-    // ESTADOS DE CARGA
-    // =====================================================
+
 
     var ocupado by remember {
         mutableStateOf(false)
@@ -82,9 +74,7 @@ fun PagoFlexApp(
         mutableStateOf(false)
     }
 
-    // =====================================================
-    // DEUDAS Y PAGOS
-    // =====================================================
+
 
     var deudas by remember {
         mutableStateOf<List<Map<String, String>>>(emptyList())
@@ -102,9 +92,7 @@ fun PagoFlexApp(
         mutableStateOf<Map<String, String>?>(null)
     }
 
-    // =====================================================
-    // PERFIL
-    // =====================================================
+
 
     var verPerfil by remember {
         mutableStateOf(false)
@@ -117,9 +105,7 @@ fun PagoFlexApp(
     val usuarioId = sesion?.get("id")?.toIntOrNull()
     val rol = sesion?.get("rol")
 
-    // =====================================================
-    // CARGA DE DATOS
-    // =====================================================
+
 
     suspend fun cargarDatos(id: Int) {
         val resultado = withContext(Dispatchers.IO) {
@@ -133,9 +119,6 @@ fun PagoFlexApp(
         }
     }
 
-    // =====================================================
-    // CIERRE DE SESIÓN
-    // =====================================================
 
     fun cerrarSesion() {
         pagoViewModel.limpiarSesion()
@@ -159,9 +142,7 @@ fun PagoFlexApp(
         seccionPerfil = "cuenta"
     }
 
-    // =====================================================
-    // ACTUALIZACIÓN Y NAVEGACIÓN
-    // =====================================================
+
 
     fun actualizarDatos() {
         val id = usuarioId ?: return
@@ -206,9 +187,7 @@ fun PagoFlexApp(
         pantalla = "detallePago"
     }
 
-    // =====================================================
-    // CONFIRMACIÓN DEL PAGO
-    // =====================================================
+
 
     fun confirmarPagoSeleccionado(deuda: Map<String, String>) {
         if (ocupado || cargandoDatos) {
@@ -305,9 +284,6 @@ fun PagoFlexApp(
         }
     }
 
-    // =====================================================
-    // CARGA INICIAL DEL USUARIO
-    // =====================================================
 
     LaunchedEffect(usuarioId, rol) {
         val id = usuarioId
@@ -325,9 +301,6 @@ fun PagoFlexApp(
         }
     }
 
-    // =====================================================
-    // REGISTRO DEL USUARIO
-    // =====================================================
 
     LaunchedEffect(
         formularioState.registroExitoso,
@@ -369,9 +342,6 @@ fun PagoFlexApp(
         }
     }
 
-    // =====================================================
-    // SELECCIÓN DE DEUDA
-    // =====================================================
 
     val pendientes = deudas.filter {
         it["estado"] == "PENDIENTE"
@@ -381,9 +351,6 @@ fun PagoFlexApp(
         it["id"] == deudaSeleccionadaId
     }
 
-    // =====================================================
-    // BOTÓN ATRÁS DE ANDROID
-    // =====================================================
 
     BackHandler(
         enabled = sesion != null &&
@@ -413,9 +380,7 @@ fun PagoFlexApp(
         // Espera a que termine el registro del pago.
     }
 
-    // =====================================================
-    // PANTALLA ACTUAL
-    // =====================================================
+
 
     when {
         // REGISTRO
@@ -431,7 +396,7 @@ fun PagoFlexApp(
             )
         }
 
-        // LOGIN
+
 
         sesion == null -> {
             LoginScreen(
@@ -508,7 +473,7 @@ fun PagoFlexApp(
             )
         }
 
-        // ADMINISTRADOR
+
 
         rol == "ADMIN" -> {
             AdminScreen(
@@ -520,7 +485,7 @@ fun PagoFlexApp(
             )
         }
 
-        // USUARIO
+
 
         else -> {
             val usuario = sesion.orEmpty()
@@ -563,7 +528,7 @@ fun PagoFlexApp(
                         .fillMaxSize()
                         .background(colores.background)
                 ) {
-                    // MENSAJE GENERAL
+
 
                     if (mensaje.isNotBlank()) {
                         MensajePagoFlex(
@@ -574,7 +539,7 @@ fun PagoFlexApp(
                         )
                     }
 
-                    // CONTENIDO DE LA SECCIÓN
+
 
                     Box(
                         modifier = Modifier
@@ -606,8 +571,6 @@ fun PagoFlexApp(
                                     }
                                 )
                             }
-
-                            // DETALLE DEL PAGO
 
                             "detallePago" -> {
                                 val deuda = deudaSeleccionada
@@ -655,7 +618,7 @@ fun PagoFlexApp(
                                 }
                             }
 
-                            // RESULTADO DEL PAGO
+
 
                             "pagoExitoso" -> {
                                 ResultadoPagoScreen(
@@ -671,7 +634,7 @@ fun PagoFlexApp(
                                 )
                             }
 
-                            // HISTORIAL
+
 
                             "historial" -> {
                                 ResumenHistorialScreen(
@@ -687,7 +650,6 @@ fun PagoFlexApp(
                                 )
                             }
 
-                            // INICIO
 
                             else -> {
                                 DashboardScreen(

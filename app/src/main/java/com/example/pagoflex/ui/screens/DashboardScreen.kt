@@ -35,9 +35,7 @@ fun DashboardScreen(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    // =====================================================
-    // ESTADO LOCAL
-    // =====================================================
+
 
     var menuExpandido by remember {
         mutableStateOf(false)
@@ -49,9 +47,6 @@ fun DashboardScreen(
         )
     }
 
-    // =====================================================
-    // PRESENTACIÓN DE LOS DATOS
-    // =====================================================
 
     val deudasOrdenadas = deudasPendientes
         .filter {
@@ -85,14 +80,12 @@ fun DashboardScreen(
         else -> "BUENAS NOCHES"
     }
 
-    // =====================================================
-    // PANTALLA
-    // =====================================================
+
 
     Scaffold(
         containerColor = colores.background,
 
-        // CABECERA
+
 
         topBar = {
             TopAppBar(
@@ -128,7 +121,7 @@ fun DashboardScreen(
                     }
                 },
 
-                // MENÚ DE PERFIL
+
 
                 actions = {
                     Box {
@@ -198,7 +191,7 @@ fun DashboardScreen(
             )
         },
 
-        // NAVEGACIÓN INFERIOR
+
 
         bottomBar = {
             BarraNavegacionPagoFlex(
@@ -216,7 +209,6 @@ fun DashboardScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // SALUDO Y ACTUALIZACIÓN
 
             item {
                 Column(
@@ -264,7 +256,7 @@ fun DashboardScreen(
                 }
             }
 
-            // TOTAL PENDIENTE
+
 
             item {
                 TarjetaSeccion(
@@ -299,7 +291,7 @@ fun DashboardScreen(
                 }
             }
 
-            // ESTADO SIN DEUDAS PENDIENTES
+
 
             if (deudasOrdenadas.isEmpty() && !cargando) {
                 item {
@@ -328,7 +320,7 @@ fun DashboardScreen(
                 }
             }
 
-            // CUENTAS PENDIENTES
+
 
             itemsIndexed(
                 items = deudasOrdenadas,

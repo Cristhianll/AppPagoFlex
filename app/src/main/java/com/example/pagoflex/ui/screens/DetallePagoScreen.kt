@@ -33,9 +33,7 @@ fun DetallePagoScreen(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    // =====================================================
-    // COLORES DEL DETALLE SEGÚN EL TEMA ACTIVO
-    // =====================================================
+
 
     val colorFondo = colores.background
     val colorTarjeta = colores.surface
@@ -49,15 +47,13 @@ fun DetallePagoScreen(
     val colorFondoIcono = colores.primary
     val colorSeparador = colores.outline.copy(alpha = 0.3f)
 
-    // La tarjeta bancaria conserva una presentación azul
-    // con texto claro en ambos temas.
+
     val colorTarjetaBancaria = Color(0xFF001F3F)
     val colorTextoTarjetaBancaria = Color.White
     val colorEtiquetaPrincipal = colores.secondary
 
-    // =====================================================
-    // DATOS DE PRESENTACIÓN
-    // =====================================================
+
+
 
     val montoFormateado = NumberFormat
         .getCurrencyInstance(Locale("es", "CL"))
@@ -70,9 +66,6 @@ fun DetallePagoScreen(
     Scaffold(
         containerColor = colorFondo,
 
-        // =================================================
-        // ZONA FIJA INFERIOR
-        // =================================================
 
         bottomBar = {
             Surface(
@@ -130,9 +123,6 @@ fun DetallePagoScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // =================================================
-            // CABECERA
-            // =================================================
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -161,9 +151,6 @@ fun DetallePagoScreen(
                 )
             }
 
-            // =================================================
-            // RESUMEN DE LA DEUDA
-            // =================================================
 
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
@@ -256,9 +243,6 @@ fun DetallePagoScreen(
                 color = colorTextoFondo
             )
 
-            // =================================================
-            // TARJETA VINCULADA
-            // =================================================
 
             if (tieneTarjeta) {
                 TarjetaSeccion(
@@ -333,9 +317,7 @@ fun DetallePagoScreen(
                     relleno = ButtonDefaults.ContentPadding
                 )
             } else {
-                // =============================================
-                // ESTADO SIN TARJETA VINCULADA
-                // =============================================
+
 
                 TarjetaSeccion(
                     forma = RoundedCornerShape(18.dp),
@@ -385,9 +367,6 @@ fun DetallePagoScreen(
     }
 }
 
-// =====================================================
-// DATO DEL RESUMEN: EMISOR O CONCEPTO
-// =====================================================
 
 @Composable
 private fun DatoDetallePago(

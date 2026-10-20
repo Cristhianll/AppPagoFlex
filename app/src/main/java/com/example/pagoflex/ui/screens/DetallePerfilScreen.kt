@@ -22,10 +22,6 @@ import com.example.pagoflex.ui.components.InterruptorConTexto
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
 
-// =====================================================
-// PANTALLA DE PERFIL
-// =====================================================
-
 @Composable
 fun DetallePerfilScreen(
     usuarioId: Int,
@@ -60,7 +56,6 @@ fun DetallePerfilScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // CABECERA
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -89,7 +84,7 @@ fun DetallePerfilScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // FOTO Y DATOS DEL USUARIO
+
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -118,7 +113,6 @@ fun DetallePerfilScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // PESTAÑAS
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -148,7 +142,7 @@ fun DetallePerfilScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // CONTENIDO DE LA PESTAÑA
+
 
             when (pestanaSeleccionada) {
                 "tarjetas" -> {
@@ -182,9 +176,6 @@ fun DetallePerfilScreen(
     }
 }
 
-// =====================================================
-// BOTÓN DE PESTAÑA
-// =====================================================
 
 @Composable
 fun BotonPestanaPerfil(
@@ -223,9 +214,6 @@ fun BotonPestanaPerfil(
     }
 }
 
-// =====================================================
-// SECCIÓN: MI CUENTA
-// =====================================================
 
 @Composable
 fun ContenidoMiCuenta(
@@ -259,9 +247,6 @@ fun ContenidoMiCuenta(
     }
 }
 
-// =====================================================
-// SECCIÓN: MIS TARJETAS
-// =====================================================
 
 @Composable
 fun ContenidoMisTarjetas(
@@ -315,7 +300,7 @@ fun ContenidoMisTarjetas(
             fontWeight = FontWeight.Bold
         )
 
-        // TARJETA REGISTRADA
+
 
         if (ultimosDigitosVisa.isNotBlank()) {
             TarjetaSeccion(
@@ -384,7 +369,6 @@ fun ContenidoMisTarjetas(
                 }
             }
         } else {
-            // ESTADO SIN TARJETAS
 
             TarjetaSeccion(
                 forma = CardDefaults.shape,
@@ -412,7 +396,7 @@ fun ContenidoMisTarjetas(
             )
         }
 
-        // ABRIR DIÁLOGO
+
 
         BotonPrincipal(
             texto = if (ultimosDigitosVisa.isBlank()) {
@@ -448,7 +432,7 @@ fun ContenidoMisTarjetas(
         )
     }
 
-    // DIÁLOGO DE VINCULACIÓN
+
 
     if (mostrarDialogo) {
         AlertDialog(
@@ -601,10 +585,6 @@ fun ContenidoMisTarjetas(
     }
 }
 
-// =====================================================
-// CAMPOS DEL DIÁLOGO DE TARJETA
-// Configuración local de CampoTexto.
-// =====================================================
 
 @Composable
 private fun CampoTarjetaPerfil(
@@ -630,9 +610,6 @@ private fun CampoTarjetaPerfil(
     )
 }
 
-// =====================================================
-// SECCIÓN: CONFIGURACIÓN
-// =====================================================
 
 @Suppress("DEPRECATION")
 @Composable
@@ -704,7 +681,7 @@ fun ContenidoConfiguracion(
             fontSize = 11.sp
         )
 
-        // Se conserva Card pulsable para abrir los términos.
+
         Card(
             onClick = {
                 mostrarTerminos = true
@@ -793,9 +770,7 @@ fun ContenidoConfiguracion(
     }
 }
 
-// =====================================================
-// TARJETA DE INFORMACIÓN PERSONAL
-// =====================================================
+
 
 @Composable
 fun CardItemPerfil(
@@ -831,9 +806,6 @@ fun CardItemPerfil(
     }
 }
 
-// =====================================================
-// OPCIÓN CON ÍCONO E INTERRUPTOR
-// =====================================================
 
 @Composable
 fun OpcionSwitchItem(

@@ -35,7 +35,7 @@ fun ResumenHistorialScreen(
     Scaffold(
         containerColor = colores.background,
 
-        // CABECERA
+
 
         topBar = {
             TopAppBar(
@@ -53,7 +53,6 @@ fun ResumenHistorialScreen(
             )
         },
 
-        // BARRA COMPARTIDA
 
         bottomBar = {
             BarraNavegacionPagoFlex(
@@ -71,7 +70,6 @@ fun ResumenHistorialScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ESTADO SIN PAGOS
 
             if (pagos.isEmpty()) {
                 item {
@@ -102,7 +100,6 @@ fun ResumenHistorialScreen(
                 }
             }
 
-            // LISTADO DE PAGOS
 
             items(
                 items = pagos,

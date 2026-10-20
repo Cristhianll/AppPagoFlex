@@ -67,14 +67,11 @@ fun PagosScreen(
         it["monto"]?.toDoubleOrNull() ?: 0.0
     }
 
-    // =====================================================
-    // PANTALLA
-    // =====================================================
 
     Scaffold(
         containerColor = colores.background,
 
-        // CABECERA
+
 
         topBar = {
             TopAppBar(
@@ -114,7 +111,7 @@ fun PagosScreen(
             )
         },
 
-        // BARRA COMPARTIDA
+
 
         bottomBar = {
             BarraNavegacionPagoFlex(
@@ -144,7 +141,7 @@ fun PagosScreen(
                 }
             }
 
-            // TOTAL POR PAGAR
+
 
             item {
                 TarjetaSeccion(
@@ -180,7 +177,7 @@ fun PagosScreen(
                 }
             }
 
-            // ESTADO SIN DEUDAS PENDIENTES
+
 
             if (deudas.isEmpty() && !cargando) {
                 item {
@@ -221,7 +218,6 @@ fun PagosScreen(
                 }
             }
 
-            // DEUDAS PENDIENTES
 
             items(
                 items = deudas,
