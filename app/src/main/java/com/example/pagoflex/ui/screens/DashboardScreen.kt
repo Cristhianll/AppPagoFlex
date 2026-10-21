@@ -13,13 +13,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.ValidacionesDeuda
+import com.example.pagoflex.ui.components.BarraNavegacionPagoFlex
 import com.example.pagoflex.ui.components.BotonPrincipal
+import com.example.pagoflex.ui.components.MarcaHorizontalPagoFlex
+import com.example.pagoflex.ui.components.SeccionPagoFlex
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import java.text.NumberFormat
 import java.util.Calendar
 import java.util.Locale
-import com.example.pagoflex.ui.components.BarraNavegacionPagoFlex
-import com.example.pagoflex.ui.components.SeccionPagoFlex
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,8 +36,6 @@ fun DashboardScreen(
 ) {
     val colores = MaterialTheme.colorScheme
 
-
-
     var menuExpandido by remember {
         mutableStateOf(false)
     }
@@ -46,7 +45,6 @@ fun DashboardScreen(
             Locale("es", "CL")
         )
     }
-
 
     val deudasOrdenadas = deudasPendientes
         .filter {
@@ -80,49 +78,17 @@ fun DashboardScreen(
         else -> "BUENAS NOCHES"
     }
 
-
-
     Scaffold(
         containerColor = colores.background,
-
-
-
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(36.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            color = colores.secondary,
-                            contentColor = colores.onSecondary
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "P",
-                                    fontSize = 23.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        Spacer(
-                            modifier = Modifier.width(10.dp)
-                        )
-
-                        Text(
-                            text = "PagoFlex",
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    MarcaHorizontalPagoFlex(
+                        tamanoIcono = 34.dp,
+                        colorPago = colores.onPrimary,
+                        colorFlex = colores.tertiary
+                    )
                 },
-
-
-
                 actions = {
                     Box {
                         IconButton(
@@ -158,6 +124,7 @@ fun DashboardScreen(
                         ) {
                             listOf(
                                 "cuenta" to "Mi cuenta y datos",
+                                "editar" to "Editar mis datos",
                                 "tarjetas" to "Mis tarjetas",
                                 "configuracion" to "Configuración",
                                 "salir" to "Cerrar sesión"
@@ -182,7 +149,6 @@ fun DashboardScreen(
                         }
                     }
                 },
-
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colores.primary,
                     titleContentColor = colores.onPrimary,
@@ -190,9 +156,6 @@ fun DashboardScreen(
                 )
             )
         },
-
-
-
         bottomBar = {
             BarraNavegacionPagoFlex(
                 seccionActual = SeccionPagoFlex.INICIO,
@@ -209,7 +172,6 @@ fun DashboardScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
             item {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -256,8 +218,6 @@ fun DashboardScreen(
                 }
             }
 
-
-
             item {
                 TarjetaSeccion(
                     forma = RoundedCornerShape(22.dp),
@@ -291,8 +251,6 @@ fun DashboardScreen(
                 }
             }
 
-
-
             if (deudasOrdenadas.isEmpty() && !cargando) {
                 item {
                     TarjetaSeccion(
@@ -319,8 +277,6 @@ fun DashboardScreen(
                     }
                 }
             }
-
-
 
             itemsIndexed(
                 items = deudasOrdenadas,

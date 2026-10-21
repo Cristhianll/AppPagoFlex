@@ -1,5 +1,6 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.data.ValidacionesTarjeta
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.TarjetaSeccion
@@ -24,86 +26,63 @@ import java.util.Locale
 fun DetallePagoScreen(
     onVolverAtras: () -> Unit,
     onConfirmarPago: () -> Unit,
+    tarjetas: List<Map<String, String>>,
+    tarjetaSeleccionadaId: String?,
+    onSeleccionarTarjeta: (String) -> Unit,
     empresa: String = "",
     concepto: String = "",
     monto: Double = 0.0,
-    ultimosDigitosTarjeta: String = "",
-    titularTarjeta: String = "",
     onIrAVincularTarjeta: () -> Unit = {}
 ) {
     val colores = MaterialTheme.colorScheme
-
-
-
-    val colorFondo = colores.background
-    val colorTarjeta = colores.surface
-    val colorTexto = colores.onSurface
-    val colorTextoFondo = colores.onBackground
-    val colorTextoSecundario = colores.onSurfaceVariant
-
-    val colorBoton = colores.secondary
-    val colorTextoBoton = colores.onSecondary
-
-    val colorFondoIcono = colores.primary
-    val colorSeparador = colores.outline.copy(alpha = 0.3f)
-
-
     val colorTarjetaBancaria = Color(0xFF001F3F)
-    val colorTextoTarjetaBancaria = Color.White
-    val colorEtiquetaPrincipal = colores.secondary
-
-
-
 
     val montoFormateado = NumberFormat
         .getCurrencyInstance(Locale("es", "CL"))
         .format(monto)
 
-    val tieneTarjeta = ultimosDigitosTarjeta.matches(
-        Regex("[0-9]{4}")
-    )
+    val tarjetaElegida = tarjetas.firstOrNull { it["id"] == tarjetaSeleccionadaId }
+    val puedePagar = tarjetaElegida != null &&
+            ValidacionesTarjeta.vencimientoVigente(tarjetaElegida["vencimiento"].orEmpty()) &&
+            monto.isFinite() && monto > 0
 
     Scaffold(
-        containerColor = colorFondo,
-
-
+        containerColor = colores.background,
         bottomBar = {
             Surface(
-                color = colorTarjeta,
-                contentColor = colorTexto,
+                color = colores.surface,
+                contentColor = colores.onSurface,
                 tonalElevation = 12.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier
-                        .navigationBarsPadding()
-                        .padding(20.dp),
+                    modifier = Modifier.navigationBarsPadding().padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Pago de demostración. " +
-                                "No se realiza un cargo bancario.",
+                        text = if (tarjetaElegida != null) {
+                            "Se pagará con ${tarjetaElegida["marca"]} •••• ${tarjetaElegida["ultimosDigitos"]}. " +
+                                    "Pago de demostración: no se realiza un cargo bancario."
+                        } else {
+                            "Pago de demostración. No se realiza un cargo bancario."
+                        },
                         fontSize = 12.sp,
-                        color = colorTextoSecundario
+                        color = colores.onSurfaceVariant
                     )
 
                     ProvideTextStyle(
-                        value = MaterialTheme.typography.labelLarge.copy(
-                            fontSize = 16.sp
-                        )
+                        value = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)
                     ) {
                         BotonPrincipal(
                             texto = "Confirmar pago · $montoFormateado",
                             onClick = onConfirmarPago,
-                            habilitado = tieneTarjeta &&
-                                    monto.isFinite() &&
-                                    monto > 0,
+                            habilitado = puedePagar,
                             modifier = Modifier.fillMaxWidth(),
                             altura = 54.dp,
                             forma = RoundedCornerShape(16.dp),
                             colores = ButtonDefaults.buttonColors(
-                                containerColor = colorBoton,
-                                contentColor = colorTextoBoton
+                                containerColor = colores.secondary,
+                                contentColor = colores.onSecondary
                             ),
                             elevacion = ButtonDefaults.buttonElevation(),
                             relleno = ButtonDefaults.ContentPadding,
@@ -123,44 +102,29 @@ fun DetallePagoScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onVolverAtras
-                ) {
-                    Text(
-                        text = "‹",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorTextoFondo
-                    )
+                IconButton(onClick = onVolverAtras) {
+                    Text("‹", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = colores.onBackground)
                 }
-
-                Spacer(
-                    modifier = Modifier.width(8.dp)
-                )
-
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Detalle de pago",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorTextoFondo
+                    color = colores.onBackground
                 )
             }
-
 
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
                 colores = CardDefaults.cardColors(
-                    containerColor = colorTarjeta,
-                    contentColor = colorTexto
+                    containerColor = colores.surface,
+                    contentColor = colores.onSurface
                 ),
-                elevacion = CardDefaults.cardElevation(
-                    defaultElevation = 4.dp
-                ),
+                elevacion = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 relleno = PaddingValues(24.dp),
                 separacion = 16.dp,
                 alineacionHorizontal = Alignment.CenterHorizontally
@@ -168,52 +132,32 @@ fun DetallePagoScreen(
                 Box(
                     modifier = Modifier
                         .size(50.dp)
-                        .background(
-                            color = colorFondoIcono,
-                            shape = RoundedCornerShape(14.dp)
-                        ),
+                        .background(color = colores.primary, shape = RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "🏢",
-                        fontSize = 24.sp
-                    )
+                    Text("🏢", fontSize = 24.sp)
                 }
 
                 Text(
                     text = "PAGAR A",
                     fontSize = 11.sp,
-                    color = colorTextoSecundario,
+                    color = colores.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
 
                 Text(
-                    text = empresa.ifBlank {
-                        "Empresa o servicio"
-                    },
+                    text = empresa.ifBlank { "Empresa o servicio" },
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorTexto
+                    fontWeight = FontWeight.Bold
                 )
 
-                HorizontalDivider(
-                    color = colorSeparador
-                )
+                HorizontalDivider(color = colores.outline.copy(alpha = 0.3f))
 
-                DatoDetallePago(
-                    etiqueta = "Emisor",
-                    valor = empresa
-                )
+                DatoDetallePago("Emisor", empresa)
+                DatoDetallePago("Concepto", concepto)
 
-                DatoDetallePago(
-                    etiqueta = "Concepto",
-                    valor = concepto
-                )
-
-                HorizontalDivider(
-                    color = colorSeparador
-                )
+                HorizontalDivider(color = colores.outline.copy(alpha = 0.3f))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -223,127 +167,37 @@ fun DetallePagoScreen(
                     Text(
                         text = "Monto total",
                         modifier = Modifier.weight(1f),
-                        color = colorTextoSecundario,
+                        color = colores.onSurfaceVariant,
                         fontSize = 14.sp
                     )
-
-                    Text(
-                        text = montoFormateado,
-                        color = colorTexto,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = montoFormateado, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
             Text(
-                text = "Medio de pago",
+                text = "Elige tu medio de pago",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorTextoFondo
+                color = colores.onBackground
             )
 
-
-            if (tieneTarjeta) {
+            if (tarjetas.isEmpty()) {
                 TarjetaSeccion(
                     forma = RoundedCornerShape(18.dp),
                     colores = CardDefaults.cardColors(
-                        containerColor = colorTarjetaBancaria,
-                        contentColor = colorTextoTarjetaBancaria
+                        containerColor = colores.surface,
+                        contentColor = colores.onSurface
                     ),
-                    elevacion = CardDefaults.cardElevation(
-                        defaultElevation = 0.dp
-                    ),
+                    elevacion = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     relleno = PaddingValues(20.dp),
                     separacion = 12.dp
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "💳",
-                            fontSize = 24.sp
-                        )
-
-                        Spacer(
-                            modifier = Modifier.width(12.dp)
-                        )
-
-                        Text(
-                            text = "Tarjeta de demostración",
-                            modifier = Modifier.weight(1f),
-                            color = colorTextoTarjetaBancaria,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-
-                        Text(
-                            text = "Principal",
-                            color = colorEtiquetaPrincipal,
-                            fontSize = 11.sp
-                        )
-                    }
-
+                    Text("No tienes tarjetas vinculadas", fontWeight = FontWeight.Bold)
                     Text(
-                        text = "•••• •••• •••• $ultimosDigitosTarjeta",
-                        color = colorTextoTarjetaBancaria,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
-                    )
-
-                    if (titularTarjeta.isNotBlank()) {
-                        Text(
-                            text = titularTarjeta,
-                            color = colorTextoTarjetaBancaria.copy(
-                                alpha = 0.8f
-                            ),
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-
-                BotonSecundario(
-                    texto = "Gestionar tarjeta de prueba",
-                    onClick = onIrAVincularTarjeta,
-                    modifier = Modifier.fillMaxWidth(),
-                    altura = null,
-                    forma = RoundedCornerShape(12.dp),
-                    colores = ButtonDefaults.outlinedButtonColors(
-                        contentColor = colores.primary
-                    ),
-                    borde = ButtonDefaults.outlinedButtonBorder,
-                    relleno = ButtonDefaults.ContentPadding
-                )
-            } else {
-
-
-                TarjetaSeccion(
-                    forma = RoundedCornerShape(18.dp),
-                    colores = CardDefaults.cardColors(
-                        containerColor = colorTarjeta,
-                        contentColor = colorTexto
-                    ),
-                    elevacion = CardDefaults.cardElevation(
-                        defaultElevation = 0.dp
-                    ),
-                    relleno = PaddingValues(20.dp),
-                    separacion = 12.dp
-                ) {
-                    Text(
-                        text = "No tienes tarjetas vinculadas",
-                        color = colorTexto,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = "Vincula una tarjeta de prueba para " +
-                                "continuar con el pago simulado.",
-                        color = colorTextoSecundario,
+                        text = "Vincula una tarjeta de prueba para continuar con el pago simulado.",
+                        color = colores.onSurfaceVariant,
                         fontSize = 14.sp
                     )
-
                     BotonPrincipal(
                         texto = "Vincular tarjeta de prueba",
                         onClick = onIrAVincularTarjeta,
@@ -351,40 +205,94 @@ fun DetallePagoScreen(
                         altura = null,
                         forma = RoundedCornerShape(12.dp),
                         colores = ButtonDefaults.buttonColors(
-                            containerColor = colorBoton,
-                            contentColor = colorTextoBoton
+                            containerColor = colores.secondary,
+                            contentColor = colores.onSecondary
                         ),
                         elevacion = ButtonDefaults.buttonElevation(),
                         relleno = ButtonDefaults.ContentPadding
                     )
                 }
+            } else {
+                tarjetas.forEach { tarjeta ->
+                    val id = tarjeta["id"].orEmpty()
+                    val seleccionada = id == tarjetaSeleccionadaId
+                    val venc = tarjeta["vencimiento"].orEmpty()
+                    val vigente = ValidacionesTarjeta.vencimientoVigente(venc)
+
+                    Card(
+                        onClick = { onSeleccionarTarjeta(id) },
+                        enabled = vigente,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = colorTarjetaBancaria,
+                            contentColor = Color.White
+                        ),
+                        border = if (seleccionada) BorderStroke(2.dp, colores.secondary) else null
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = seleccionada,
+                                onClick = null,
+                                enabled = vigente,
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = colores.secondary,
+                                    unselectedColor = Color.White
+                                )
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = "${tarjeta["marca"].orEmpty()} •••• ${tarjeta["ultimosDigitos"].orEmpty()}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = tarjeta["titular"].orEmpty() + " • " +
+                                            if (vigente) "Vence $venc" else "Vencida $venc",
+                                    fontSize = 12.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                            if (tarjeta["principal"] == "1") {
+                                Text("★ Principal", color = colores.secondary, fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+
+                BotonSecundario(
+                    texto = "Gestionar mis tarjetas",
+                    onClick = onIrAVincularTarjeta,
+                    modifier = Modifier.fillMaxWidth(),
+                    altura = null,
+                    forma = RoundedCornerShape(12.dp),
+                    colores = ButtonDefaults.outlinedButtonColors(contentColor = colores.primary),
+                    borde = ButtonDefaults.outlinedButtonBorder,
+                    relleno = ButtonDefaults.ContentPadding
+                )
             }
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
 
-
 @Composable
-private fun DatoDetallePago(
-    etiqueta: String,
-    valor: String
-) {
+private fun DatoDetallePago(etiqueta: String, valor: String) {
     val colores = MaterialTheme.colorScheme
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = etiqueta,
-            color = colores.onSurfaceVariant,
-            fontSize = 13.sp
-        )
-
+        Text(text = etiqueta, color = colores.onSurfaceVariant, fontSize = 13.sp)
         Text(
             text = valor,
             color = colores.onSurface,

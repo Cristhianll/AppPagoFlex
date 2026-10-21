@@ -34,9 +34,6 @@ fun ResumenHistorialScreen(
 
     Scaffold(
         containerColor = colores.background,
-
-
-
         topBar = {
             TopAppBar(
                 title = {
@@ -45,15 +42,12 @@ fun ResumenHistorialScreen(
                         fontWeight = FontWeight.Bold
                     )
                 },
-
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colores.primary,
                     titleContentColor = colores.onPrimary
                 )
             )
         },
-
-
         bottomBar = {
             BarraNavegacionPagoFlex(
                 seccionActual = SeccionPagoFlex.HISTORIAL,
@@ -100,7 +94,6 @@ fun ResumenHistorialScreen(
                 }
             }
 
-
             items(
                 items = pagos,
                 key = { pago ->
@@ -114,6 +107,7 @@ fun ResumenHistorialScreen(
                     ?.toDoubleOrNull() ?: 0.0
 
                 val fecha = pago["fecha"].orEmpty()
+                val tarjetaUsada = pago["tarjeta"].orEmpty()
 
                 TarjetaSeccion(
                     forma = RoundedCornerShape(16.dp),
@@ -159,6 +153,14 @@ fun ResumenHistorialScreen(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
+
+                    if (tarjetaUsada.isNotBlank()) {
+                        Text(
+                            text = "Pagado con $tarjetaUsada",
+                            color = colores.onSurfaceVariant,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
         }

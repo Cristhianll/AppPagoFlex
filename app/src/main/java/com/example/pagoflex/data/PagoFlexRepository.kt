@@ -6,6 +6,12 @@ class PagoFlexRepository(context: Context) {
 
     private val db = PagoFlexDbHelper(context.applicationContext)
 
+    val maxTarjetas: Int = PagoFlexDbHelper.MAX_TARJETAS
+
+    // ==========================================
+    // AUTENTICACIÓN Y REGISTRO
+    // ==========================================
+
     fun iniciarSesion(
         correo: String,
         clave: String
@@ -15,24 +21,97 @@ class PagoFlexRepository(context: Context) {
 
     fun registrarUsuario(
         nombre: String,
+        rut: String,
         correo: String,
-        clave: String
+        clave: String,
+        pregunta1: String,
+        respuesta1: String,
+        pregunta2: String,
+        respuesta2: String
     ): Boolean {
         return db.registrarUsuario(
-            nombre,
-            correo,
-            clave
+            nombre, rut, correo, clave,
+            pregunta1, respuesta1, pregunta2, respuesta2
+        ) == null
+    }
+
+    // ==========================================
+    // RECUPERACIÓN DE CONTRASEÑA Y PERFIL
+    // ==========================================
+
+    fun obtenerPreguntas(correo: String): List<String>? {
+        return db.obtenerPreguntas(correo)
+    }
+
+    fun restablecerClave(
+        correo: String,
+        respuesta1: String,
+        respuesta2: String,
+        nuevaClave: String
+    ): Boolean {
+        return db.restablecerClave(correo, respuesta1, respuesta2, nuevaClave)
+    }
+
+    fun actualizarPerfil(
+        usuarioId: Int,
+        nombre: String,
+        rut: String,
+        correo: String,
+        pregunta1: String = "",
+        respuesta1: String = "",
+        pregunta2: String = "",
+        respuesta2: String = ""
+    ): String? {
+        return db.actualizarPerfil(
+            usuarioId, nombre, rut, correo,
+            pregunta1, respuesta1, pregunta2, respuesta2
         )
     }
+
+    fun guardarFoto(usuarioId: Int, fotoBytes: ByteArray): Boolean {
+        return db.guardarFoto(usuarioId, fotoBytes)
+    }
+
+    fun obtenerFoto(usuarioId: Int): ByteArray? {
+        return db.obtenerFoto(usuarioId)
+    }
+
+    // ==========================================
+    // GESTIÓN DE TARJETAS
+    // ==========================================
+
+    fun listarTarjetasUsuario(usuarioId: Int): List<Map<String, String>> {
+        return db.listarTarjetas(usuarioId)
+    }
+
+    fun agregarTarjeta(
+        usuarioId: Int,
+        ultimosDigitos: String,
+        titular: String,
+        vencimiento: String,
+        marca: String
+    ): Boolean {
+        return db.agregarTarjeta(usuarioId, ultimosDigitos, titular, vencimiento, marca) == null
+    }
+
+    fun marcarTarjetaPrincipal(tarjetaId: Int, usuarioId: Int): Boolean {
+        return db.marcarTarjetaPrincipal(tarjetaId, usuarioId)
+    }
+
+    fun eliminarTarjeta(tarjetaId: Int, usuarioId: Int): Boolean {
+        return db.eliminarTarjeta(tarjetaId, usuarioId)
+    }
+
+    // ==========================================
+    // CLIENTES Y DEUDAS
+    // ==========================================
 
     fun listarUsuarios(): List<Map<String, String>> {
         return db.listarUsuarios()
     }
 
     fun listarClientes(): List<Map<String, String>> {
-        return db.listarUsuarios().filter {
-            it["rol"] == "USUARIO"
-        }
+        return db.listarUsuarios().filter { it["rol"] == "USUARIO" }
     }
 
     fun crearDeuda(
@@ -42,13 +121,7 @@ class PagoFlexRepository(context: Context) {
         monto: Double,
         vencimiento: String
     ): Boolean {
-        return db.crearDeuda(
-            usuarioId,
-            concepto,
-            empresa,
-            monto,
-            vencimiento
-        )
+        return db.crearDeuda(usuarioId, concepto, empresa, monto, vencimiento)
     }
 
     fun actualizarDeuda(
@@ -59,47 +132,29 @@ class PagoFlexRepository(context: Context) {
         monto: Double,
         vencimiento: String
     ): Boolean {
-        return db.actualizarDeuda(
-            deudaId,
-            usuarioId,
-            concepto,
-            empresa,
-            monto,
-            vencimiento
-        )
+        return db.actualizarDeuda(deudaId, usuarioId, concepto, empresa, monto, vencimiento)
     }
 
     fun eliminarDeuda(deudaId: Int): Boolean {
         return db.eliminarDeuda(deudaId)
     }
 
-    fun listarDeudas(
-        usuarioId: Int? = null
-    ): List<Map<String, String>> {
+    fun listarDeudas(usuarioId: Int? = null): List<Map<String, String>> {
         return db.listarDeudas(usuarioId)
     }
 
-    fun listarDeudasPendientes(
-        usuarioId: Int
-    ): List<Map<String, String>> {
-        return db.listarDeudas(usuarioId).filter {
-            it["estado"] == "PENDIENTE"
-        }
+    fun pagarDeuda(deudaId: Int, usuarioId: Int, tarjetaId: Int): Boolean {
+        return db.pagarDeuda(deudaId, usuarioId, tarjetaId)
     }
 
-    fun pagarDeuda(
-        deudaId: Int,
-        usuarioId: Int
-    ): Boolean {
-        return db.pagarDeuda(
-            deudaId,
-            usuarioId
-        )
-    }
-
-    fun listarPagos(
-        usuarioId: Int
-    ): List<Map<String, String>> {
+    fun listarPagos(usuarioId: Int): List<Map<String, String>> {
         return db.listarPagos(usuarioId)
+    }
+    fun verificarRespuestas(correo: String, respuesta1: String, respuesta2: String): Boolean {
+        return try {
+            db.verificarRespuestas(correo, respuesta1, respuesta2)
+        } catch (_: Exception) {
+            false
+        }
     }
 }

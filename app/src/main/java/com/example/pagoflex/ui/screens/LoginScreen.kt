@@ -12,17 +12,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.CampoTexto
+import com.example.pagoflex.ui.components.IconoPagoFlex
+import com.example.pagoflex.ui.components.NombrePagoFlex
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Acento
 import com.example.pagoflex.ui.theme.Blanco
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
 import com.example.pagoflex.ui.theme.PrimarioOscuro
-
 
 @Suppress("DEPRECATION")
 @Composable
@@ -34,47 +37,18 @@ fun LoginScreen(
     onCorreo: (String) -> Unit,
     onClave: (String) -> Unit,
     onEntrar: () -> Unit,
-    onRegistro: () -> Unit
+    onRegistro: () -> Unit,
+    onRecuperar: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
     val tema = LocalControlTemaPagoFlex.current
 
-
-
-    val colorFondo = if (tema.oscuro) {
-        colores.background
-    } else {
-        PrimarioOscuro
-    }
-
-    val colorFondoLogo = Acento
-    val colorLetraLogo = PrimarioOscuro
-
-    val colorTitulo = Blanco
+    val colorFondo = if (tema.oscuro) colores.background else PrimarioOscuro
     val colorSubtitulo = Blanco.copy(alpha = 0.85f)
-
-    val colorTarjeta = colores.surface
-    val colorTextoTarjeta = colores.onSurface
-
-    val colorMensaje = colores.onSurfaceVariant
-    val colorError = colores.error
-
-    val colorBotonIngresar = colores.secondary
-    val colorTextoBotonIngresar = colores.onSecondary
-
-    val colorTituloDemo = Acento
     val colorTextoDemo = Blanco.copy(alpha = 0.85f)
 
-
-    var mostrarClave by remember {
-        mutableStateOf(false)
-    }
-
-    var errorLocal by remember {
-        mutableStateOf("")
-    }
-
-
+    var mostrarClave by remember { mutableStateOf(false) }
+    var errorLocal by remember { mutableStateOf("") }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -92,71 +66,41 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
+            IconoPagoFlex(tamano = 88.dp)
 
-            Surface(
-                modifier = Modifier.size(64.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = colorFondoLogo,
-                contentColor = colorLetraLogo
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "P",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            Text(
-                text = "PagoFlex",
-                color = colorTitulo,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
+            NombrePagoFlex(tamanoFuente = 34.sp)
 
             Text(
                 text = "Tus pagos, más simples",
                 color = colorSubtitulo
             )
 
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
-
-
+            Spacer(modifier = Modifier.height(24.dp))
 
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
                 colores = CardDefaults.cardColors(
-                    containerColor = colorTarjeta,
-                    contentColor = colorTextoTarjeta
+                    containerColor = colores.surface,
+                    contentColor = colores.onSurface
                 ),
-                elevacion = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
-                ),
+                elevacion = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 relleno = PaddingValues(20.dp),
                 separacion = 14.dp
             ) {
                 Text(
                     text = "Iniciar sesión",
-                    color = colorTextoTarjeta,
+                    color = colores.onSurface,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
 
-
                 CampoTexto(
                     valor = correo,
-                    onValorCambia = { nuevoCorreo ->
+                    onValorCambia = {
                         errorLocal = ""
-                        onCorreo(nuevoCorreo)
+                        onCorreo(it)
                     },
                     etiqueta = "Correo electrónico",
                     icono = null,
@@ -169,19 +113,15 @@ fun LoginScreen(
                     reservarEspacioAyuda = false
                 )
 
-                // CONTRASEÑA
-
                 CampoContrasena(
                     valor = clave,
-                    onValorCambia = { nuevaClave ->
+                    onValorCambia = {
                         errorLocal = ""
-                        onClave(nuevaClave)
+                        onClave(it)
                     },
                     etiqueta = "Contraseña",
                     visible = mostrarClave,
-                    onAlternarVisible = {
-                        mostrarClave = !mostrarClave
-                    },
+                    onAlternarVisible = { mostrarClave = !mostrarClave },
                     modifier = Modifier.fillMaxWidth(),
                     habilitado = !ocupado,
                     mostrarCandado = false,
@@ -191,56 +131,30 @@ fun LoginScreen(
                     reservarEspacioError = false
                 )
 
-
-
                 if (errorLocal.isNotBlank()) {
-                    Text(
-                        text = errorLocal,
-                        color = colorError
-                    )
+                    Text(text = errorLocal, color = colores.error)
                 }
-
-
 
                 if (mensaje.isNotBlank()) {
-                    Text(
-                        text = mensaje,
-                        color = colorMensaje
-                    )
+                    Text(text = mensaje, color = colores.onSurfaceVariant)
                 }
 
-
-
                 BotonPrincipal(
-                    texto = if (ocupado) {
-                        "Ingresando..."
-                    } else {
-                        "Ingresar"
-                    },
+                    texto = if (ocupado) "Ingresando..." else "Ingresar",
                     onClick = {
                         errorLocal = when {
-                            !Patterns.EMAIL_ADDRESS
-                                .matcher(correo.trim())
-                                .matches() -> {
+                            !Patterns.EMAIL_ADDRESS.matcher(correo.trim()).matches() ->
                                 "Ingresa un correo válido."
-                            }
-
-                            clave.isBlank() -> {
-                                "Ingresa tu contraseña."
-                            }
-
+                            clave.isBlank() -> "Ingresa tu contraseña."
                             else -> ""
                         }
-
-                        if (errorLocal.isBlank()) {
-                            onEntrar()
-                        }
+                        if (errorLocal.isBlank()) onEntrar()
                     },
                     modifier = Modifier.fillMaxWidth(),
                     habilitado = !ocupado,
                     colores = ButtonDefaults.buttonColors(
-                        containerColor = colorBotonIngresar,
-                        contentColor = colorTextoBotonIngresar
+                        containerColor = colores.secondary,
+                        contentColor = colores.onSecondary
                     ),
                     forma = RoundedCornerShape(12.dp),
                     altura = 50.dp,
@@ -248,8 +162,6 @@ fun LoginScreen(
                     relleno = ButtonDefaults.ContentPadding,
                     pesoTexto = FontWeight.Bold
                 )
-
-
 
                 BotonSecundario(
                     texto = "Crear cuenta",
@@ -264,27 +176,22 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(20.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
+            TextButton(
+                onClick = onRecuperar,
+                enabled = !ocupado
+            ) {
+                Text(
+                    text = "Recuperar cuenta",
+                    color = Acento,
+                    fontWeight = FontWeight.SemiBold,
+                    textDecoration = TextDecoration.Underline
+                )
+            }
 
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = "Accesos de demostración",
-                color = colorTituloDemo,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Text(
-                text = "Admin: admin@pagoflex.cl",
-                color = colorTextoDemo
-            )
-
-            Text(
-                text = "Usuario: emilia@pagoflex.cl",
-                color = colorTextoDemo
-            )
         }
     }
 }
