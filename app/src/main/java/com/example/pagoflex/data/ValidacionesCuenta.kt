@@ -14,7 +14,6 @@ object PreguntasSecretas {
         "¿Cuál es tu comida favorita?"
     )
 
-
     fun normalizarRespuesta(texto: String): String {
         val sinTildes = Normalizer
             .normalize(texto.trim().lowercase(Locale.ROOT), Normalizer.Form.NFD)
@@ -52,13 +51,11 @@ object ValidacionesRut {
         return limpio.last() == esperado
     }
 
-
     fun normalizar(texto: String): String {
         val limpio = limpiar(texto)
         if (limpio.length < 2) return limpio
         return limpio.dropLast(1) + "-" + limpio.last()
     }
-
 
     fun formatear(texto: String): String {
         val limpio = limpiar(texto)
