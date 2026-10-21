@@ -48,7 +48,6 @@ fun IconoPagoFlex(
         val w = size.width
         val h = size.height
 
-        // Fondo con degradado corporativo
         drawRoundRect(
             brush = Brush.linearGradient(
                 colors = listOf(PrimarioOscuro, Primario, Secundario),
@@ -58,7 +57,6 @@ fun IconoPagoFlex(
             cornerRadius = CornerRadius(w * 0.26f, w * 0.26f)
         )
 
-        // Tarjeta inclinada
         rotate(degrees = -12f, pivot = Offset(w / 2f, h / 2f)) {
             drawRoundRect(
                 color = Blanco,
@@ -79,7 +77,6 @@ fun IconoPagoFlex(
             )
         }
 
-        // Estela de "flujo" (la parte "Flex")
         val curva = Path().apply {
             moveTo(w * 0.16f, h * 0.80f)
             cubicTo(w * 0.38f, h * 0.62f, w * 0.60f, h * 0.92f, w * 0.82f, h * 0.70f)

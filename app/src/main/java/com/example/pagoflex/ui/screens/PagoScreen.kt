@@ -39,10 +39,6 @@ fun PagosScreen(
         )
     }
 
-    // =====================================================
-    // PRESENTACIÓN DE LOS DATOS
-    // =====================================================
-
     val deudas = deudasPendientes
         .filter {
             it["estado"] == "PENDIENTE"

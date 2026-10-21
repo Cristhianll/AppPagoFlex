@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">PagoFlex</string>
 
-    <!-- Textos de la pantalla de formulario -->
     <string name="titulo_formulario">Crear cuenta</string>
     <string name="banner_titulo">Únete a la comunidad</string>
     <string name="banne_subtitulo">Completa los datos en menos de un minuto</string>
@@ -21,14 +20,12 @@
     <string name="btn_limpiar">Limpiar</string>
     <string name="registro_exitoso">Registro exitoso. ¡Bienvenido/a %1$s!</string>
 
-    <!-- Textos para la pantalla de perfil -->
     <string name="titulo_perfil">Mi perfil</string>
     <string name="seccion_sobre_mi">Sobre mí</string>
     <string name="seccion_intereses">Intereses</string>
     <string name="btn_seguir">Seguir</string>
     <string name="btn_siguiendo">Siguiendo</string>
 
-    <!-- Descripciones de accesibilidad para TalkBack -->
     <string name="cd_banner">Ilustración de un formulario</string>
     <string name="cd_portada">Paisaje de montañas al atardecer</string>
     <string name="cd_avatar">Foto de perfil</string>

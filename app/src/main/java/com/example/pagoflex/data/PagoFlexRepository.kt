@@ -8,10 +8,6 @@ class PagoFlexRepository(context: Context) {
 
     val maxTarjetas: Int = PagoFlexDbHelper.MAX_TARJETAS
 
-    // ==========================================
-    // AUTENTICACIÓN Y REGISTRO
-    // ==========================================
-
     fun iniciarSesion(
         correo: String,
         clave: String
@@ -34,10 +30,6 @@ class PagoFlexRepository(context: Context) {
             pregunta1, respuesta1, pregunta2, respuesta2
         ) == null
     }
-
-    // ==========================================
-    // RECUPERACIÓN DE CONTRASEÑA Y PERFIL
-    // ==========================================
 
     fun obtenerPreguntas(correo: String): List<String>? {
         return db.obtenerPreguntas(correo)
@@ -76,10 +68,6 @@ class PagoFlexRepository(context: Context) {
         return db.obtenerFoto(usuarioId)
     }
 
-    // ==========================================
-    // GESTIÓN DE TARJETAS
-    // ==========================================
-
     fun listarTarjetasUsuario(usuarioId: Int): List<Map<String, String>> {
         return db.listarTarjetas(usuarioId)
     }
@@ -101,10 +89,6 @@ class PagoFlexRepository(context: Context) {
     fun eliminarTarjeta(tarjetaId: Int, usuarioId: Int): Boolean {
         return db.eliminarTarjeta(tarjetaId, usuarioId)
     }
-
-    // ==========================================
-    // CLIENTES Y DEUDAS
-    // ==========================================
 
     fun listarUsuarios(): List<Map<String, String>> {
         return db.listarUsuarios()

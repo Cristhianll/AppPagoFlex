@@ -194,8 +194,6 @@ fun BotonPestanaPerfil(
     }
 }
 
-// ───────────────────────── CUENTA ─────────────────────────
-
 @Composable
 fun ContenidoMiCuenta(
     nombre: String,
@@ -223,7 +221,6 @@ fun ContenidoMiCuenta(
     }
 }
 
-// ───────────────────────── EDITAR DATOS ─────────────────────────
 
 @Composable
 private fun ContenidoEditarDatos(
@@ -383,8 +380,6 @@ private fun CampoEditar(
         reservarEspacioAyuda = false
     )
 }
-
-// ───────────────────────── TARJETAS (varias) ─────────────────────────
 
 private fun detectarMarca(numero: String): String = when {
     numero.startsWith("4") -> "Visa"
@@ -669,8 +664,6 @@ fun ContenidoMisTarjetas(
         )
     }
 }
-
-// ───────────────────────── AJUSTES ─────────────────────────
 
 @Suppress("DEPRECATION")
 @Composable
