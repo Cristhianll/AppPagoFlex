@@ -1,5 +1,6 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,36 +14,42 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.data.PagoFlexRepository
+import com.example.pagoflex.data.PreguntasSecretas
+
+import com.example.pagoflex.data.ValidacionesRut
 import com.example.pagoflex.data.ValidacionesTarjeta
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoTexto
 import com.example.pagoflex.ui.components.FotoPerfilEditable
 import com.example.pagoflex.ui.components.InterruptorConTexto
+import com.example.pagoflex.ui.components.SelectorDesplegable
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DetallePerfilScreen(
-    usuarioId: Int,
-    nombreUsuario: String,
-    correoUsuario: String,
-    ultimosDigitosVisa: String,
-    tarjetaPrincipal: Boolean,
-    titularTarjeta: String = "",
-    vencimientoTarjeta: String = "",
-    notificacionesActivas: Boolean = true,
-    seccionInicial: String = "cuenta",
+    repository: PagoFlexRepository,
+    usuario: Map<String, String>,
+    tarjetas: List<Map<String, String>>,
+    notificacionesActivas: Boolean,
+    seccionInicial: String,
     onVolver: () -> Unit,
     onCerrarSesion: () -> Unit,
-    onVincularTarjeta: (String, String, String) -> Boolean,
-    onAlternarNotificaciones: () -> Unit = {}
+    onTarjetasCambiaron: () -> Unit,
+    onUsuarioActualizado: (Map<String, String>) -> Unit,
+    onAlternarNotificaciones: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
+    val usuarioId = usuario["id"]?.toIntOrNull() ?: 0
+    val nombre = usuario["nombre"].orEmpty()
+    val rut = usuario["rut"].orEmpty()
 
-    var pestanaSeleccionada by remember(seccionInicial) {
-        mutableStateOf(seccionInicial)
-    }
+    var pestana by remember(seccionInicial) { mutableStateOf(seccionInicial) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -53,38 +60,28 @@ fun DetallePerfilScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onVolver
-                ) {
-                    Text(
-                        text = "←",
-                        fontSize = 24.sp,
-                        color = colores.onBackground
-                    )
+                IconButton(onClick = onVolver) {
+                    Text("←", fontSize = 24.sp, color = colores.onBackground)
                 }
-
                 Text(
                     text = "Gestión de Perfil",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = colores.onBackground
                 )
-
                 Spacer(Modifier.width(48.dp))
             }
 
             Spacer(Modifier.height(12.dp))
-
-
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -92,16 +89,27 @@ fun DetallePerfilScreen(
             ) {
                 FotoPerfilEditable(
                     usuarioId = usuarioId,
-                    nombreUsuario = nombreUsuario
+                    nombreUsuario = nombre,
+                    repository = repository
                 )
 
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    text = nombreUsuario.ifBlank { "Usuario" },
-                    color = colores.onBackground,
+                    text = nombre.ifBlank { "Usuario" },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = if (rut.isBlank()) {
+                        "RUT no registrado (complétalo en Editar datos)"
+                    } else {
+                        "RUT ${ValidacionesRut.formatear(rut)}"
+                    },
+                    color = colores.primary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
@@ -113,69 +121,51 @@ fun DetallePerfilScreen(
 
             Spacer(Modifier.height(20.dp))
 
-
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                BotonPestanaPerfil(
-                    titulo = "Cuenta",
-                    seleccionado = pestanaSeleccionada == "cuenta"
-                ) {
-                    pestanaSeleccionada = "cuenta"
-                }
-
-                BotonPestanaPerfil(
-                    titulo = "Tarjetas",
-                    seleccionado = pestanaSeleccionada == "tarjetas"
-                ) {
-                    pestanaSeleccionada = "tarjetas"
-                }
-
-                BotonPestanaPerfil(
-                    titulo = "Ajustes",
-                    seleccionado = pestanaSeleccionada == "configuracion"
-                ) {
-                    pestanaSeleccionada = "configuracion"
-                }
+                BotonPestanaPerfil("Cuenta", pestana == "cuenta") { pestana = "cuenta" }
+                BotonPestanaPerfil("Editar datos", pestana == "editar") { pestana = "editar" }
+                BotonPestanaPerfil("Tarjetas", pestana == "tarjetas") { pestana = "tarjetas" }
+                BotonPestanaPerfil("Ajustes", pestana == "configuracion") { pestana = "configuracion" }
             }
 
             Spacer(Modifier.height(20.dp))
 
+            when (pestana) {
+                "editar" -> ContenidoEditarDatos(
+                    repository = repository,
+                    usuario = usuario,
+                    onUsuarioActualizado = onUsuarioActualizado
+                )
 
+                "tarjetas" -> ContenidoMisTarjetas(
+                    repository = repository,
+                    usuarioId = usuarioId,
+                    tarjetas = tarjetas,
+                    onTarjetasCambiaron = onTarjetasCambiaron
+                )
 
-            when (pestanaSeleccionada) {
-                "tarjetas" -> {
-                    ContenidoMisTarjetas(
-                        ultimosDigitosVisa = ultimosDigitosVisa,
-                        tarjetaPrincipal = tarjetaPrincipal,
-                        titularTarjeta = titularTarjeta,
-                        vencimientoTarjeta = vencimientoTarjeta,
-                        onVincularTarjeta = onVincularTarjeta
-                    )
-                }
+                "configuracion" -> ContenidoConfiguracion(
+                    notificacionesActivas = notificacionesActivas,
+                    onAlternarNotificaciones = onAlternarNotificaciones,
+                    onCerrarSesion = onCerrarSesion
+                )
 
-                "configuracion" -> {
-                    ContenidoConfiguracion(
-                        notificacionesActivas = notificacionesActivas,
-                        onAlternarNotificaciones = onAlternarNotificaciones,
-                        onCerrarSesion = onCerrarSesion
-                    )
-                }
-
-                else -> {
-                    ContenidoMiCuenta(
-                        nombre = nombreUsuario,
-                        correo = correoUsuario
-                    )
-                }
+                else -> ContenidoMiCuenta(
+                    nombre = nombre,
+                    rut = rut,
+                    correo = usuario["correo"].orEmpty(),
+                    cantidadTarjetas = tarjetas.size,
+                    maxTarjetas = repository.maxTarjetas
+                )
             }
 
             Spacer(Modifier.height(24.dp))
         }
     }
 }
-
 
 @Composable
 fun BotonPestanaPerfil(
@@ -186,9 +176,7 @@ fun BotonPestanaPerfil(
     val colores = MaterialTheme.colorScheme
 
     ProvideTextStyle(
-        value = MaterialTheme.typography.labelLarge.copy(
-            fontSize = 13.sp
-        )
+        value = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp)
     ) {
         BotonPrincipal(
             texto = titulo,
@@ -196,33 +184,27 @@ fun BotonPestanaPerfil(
             altura = 40.dp,
             forma = RoundedCornerShape(12.dp),
             colores = ButtonDefaults.buttonColors(
-                containerColor = if (seleccionado) {
-                    colores.primary
-                } else {
-                    colores.surfaceVariant
-                },
-                contentColor = if (seleccionado) {
-                    colores.onPrimary
-                } else {
-                    colores.onSurfaceVariant
-                }
+                containerColor = if (seleccionado) colores.primary else colores.surfaceVariant,
+                contentColor = if (seleccionado) colores.onPrimary else colores.onSurfaceVariant
             ),
             elevacion = ButtonDefaults.buttonElevation(),
-            relleno = PaddingValues(horizontal = 18.dp),
+            relleno = PaddingValues(horizontal = 16.dp),
             pesoTexto = FontWeight.Bold
         )
     }
 }
 
+// ───────────────────────── CUENTA ─────────────────────────
 
 @Composable
 fun ContenidoMiCuenta(
     nombre: String,
-    correo: String
+    rut: String,
+    correo: String,
+    cantidadTarjetas: Int,
+    maxTarjetas: Int
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = "INFORMACIÓN PERSONAL",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -230,57 +212,205 @@ fun ContenidoMiCuenta(
             fontWeight = FontWeight.Bold
         )
 
+        CardItemPerfil("Nombre completo", nombre.ifBlank { "Sin nombre" })
         CardItemPerfil(
-            label = "Nombre completo",
-            valor = nombre.ifBlank { "Sin nombre" }
+            "RUT",
+            if (rut.isBlank()) "Sin RUT registrado" else ValidacionesRut.formatear(rut)
+        )
+        CardItemPerfil("Correo electrónico", correo.ifBlank { "Sin correo" })
+        CardItemPerfil("Tarjetas registradas", "$cantidadTarjetas de $maxTarjetas")
+        CardItemPerfil("Estado de cuenta", "Registrada")
+    }
+}
+
+// ───────────────────────── EDITAR DATOS ─────────────────────────
+
+@Composable
+private fun ContenidoEditarDatos(
+    repository: PagoFlexRepository,
+    usuario: Map<String, String>,
+    onUsuarioActualizado: (Map<String, String>) -> Unit
+) {
+    val colores = MaterialTheme.colorScheme
+    val scope = rememberCoroutineScope()
+    val usuarioId = usuario["id"]?.toIntOrNull() ?: 0
+
+    var nombre by remember(usuarioId) { mutableStateOf(usuario["nombre"].orEmpty()) }
+    var rut by remember(usuarioId) {
+        mutableStateOf(ValidacionesRut.formatear(usuario["rut"].orEmpty()))
+    }
+    var correo by remember(usuarioId) { mutableStateOf(usuario["correo"].orEmpty()) }
+    var pregunta1 by remember { mutableStateOf("") }
+    var respuesta1 by remember { mutableStateOf("") }
+    var pregunta2 by remember { mutableStateOf("") }
+    var respuesta2 by remember { mutableStateOf("") }
+    var mensaje by remember { mutableStateOf("") }
+    var esError by remember { mutableStateOf(false) }
+    var guardando by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "EDITAR DATOS PERSONALES",
+            color = colores.onSurfaceVariant,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
         )
 
-        CardItemPerfil(
-            label = "Correo electrónico",
-            valor = correo.ifBlank { "Sin correo" }
+        CampoEditar(nombre, { nombre = it; mensaje = "" }, "Nombre completo", !guardando)
+        CampoEditar(
+            valor = rut,
+            onCambia = {
+                rut = it.filter { c -> c.isDigit() || c in ".-kK" }.take(12)
+                mensaje = ""
+            },
+            etiqueta = "RUT",
+            habilitado = !guardando,
+            ayuda = "Ejemplo: 12.345.678-5"
+        )
+        CampoEditar(
+            correo, { correo = it; mensaje = "" }, "Correo electrónico",
+            !guardando, KeyboardType.Email
         )
 
-        CardItemPerfil(
-            label = "Estado de cuenta",
-            valor = "Registrada"
+        Text(
+            text = "PREGUNTAS SECRETAS (OPCIONAL)",
+            color = colores.onSurfaceVariant,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Déjalas vacías para conservar las actuales. Si las completas, " +
+                    "reemplazan a las anteriores.",
+            color = colores.onSurfaceVariant,
+            fontSize = 12.sp
+        )
+
+        SelectorDesplegable(
+            etiqueta = "Pregunta secreta 1",
+            textoSeleccionado = pregunta1,
+            opciones = PreguntasSecretas.lista,
+            onSeleccion = { pregunta1 = PreguntasSecretas.lista[it]; mensaje = "" },
+            habilitado = !guardando
+        )
+        CampoEditar(respuesta1, { respuesta1 = it; mensaje = "" }, "Respuesta 1", !guardando)
+
+        SelectorDesplegable(
+            etiqueta = "Pregunta secreta 2",
+            textoSeleccionado = pregunta2,
+            opciones = PreguntasSecretas.lista,
+            onSeleccion = { pregunta2 = PreguntasSecretas.lista[it]; mensaje = "" },
+            habilitado = !guardando
+        )
+        CampoEditar(respuesta2, { respuesta2 = it; mensaje = "" }, "Respuesta 2", !guardando)
+
+        if (mensaje.isNotBlank()) {
+            Text(
+                text = mensaje,
+                color = if (esError) colores.error else colores.primary,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        BotonPrincipal(
+            texto = if (guardando) "Guardando..." else "Guardar cambios",
+            habilitado = !guardando,
+            onClick = {
+                scope.launch {
+                    guardando = true
+                    val error = try {
+                        withContext(Dispatchers.IO) {
+                            repository.actualizarPerfil(
+                                usuarioId, nombre, rut, correo,
+                                pregunta1, respuesta1, pregunta2, respuesta2
+                            )
+                        }
+                    } catch (_: Exception) {
+                        "No se pudo guardar. Intenta nuevamente."
+                    }
+                    guardando = false
+
+                    if (error == null) {
+                        esError = false
+                        mensaje = "Datos actualizados correctamente."
+                        pregunta1 = ""; respuesta1 = ""; pregunta2 = ""; respuesta2 = ""
+                        onUsuarioActualizado(
+                            usuario + mapOf(
+                                "nombre" to nombre.trim(),
+                                "rut" to ValidacionesRut.normalizar(rut),
+                                "correo" to correo.trim().lowercase()
+                            )
+                        )
+                    } else {
+                        esError = true
+                        mensaje = error
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            altura = 48.dp,
+            forma = RoundedCornerShape(12.dp),
+            colores = ButtonDefaults.buttonColors(
+                containerColor = colores.secondary,
+                contentColor = colores.onSecondary
+            ),
+            elevacion = ButtonDefaults.buttonElevation(),
+            relleno = ButtonDefaults.ContentPadding,
+            pesoTexto = FontWeight.Bold
         )
     }
 }
 
+@Composable
+private fun CampoEditar(
+    valor: String,
+    onCambia: (String) -> Unit,
+    etiqueta: String,
+    habilitado: Boolean,
+    teclado: KeyboardType = KeyboardType.Text,
+    ayuda: String? = null
+) {
+    CampoTexto(
+        valor = valor,
+        onValorCambia = onCambia,
+        etiqueta = etiqueta,
+        icono = null,
+        habilitado = habilitado,
+        tipoTeclado = teclado,
+        ayuda = ayuda,
+        forma = OutlinedTextFieldDefaults.shape,
+        colores = OutlinedTextFieldDefaults.colors(),
+        accionTeclado = ImeAction.Default,
+        reservarEspacioAyuda = false
+    )
+}
+
+// ───────────────────────── TARJETAS (varias) ─────────────────────────
+
+private fun detectarMarca(numero: String): String = when {
+    numero.startsWith("4") -> "Visa"
+    numero.startsWith("5") -> "Mastercard"
+    numero.startsWith("3") -> "Amex"
+    else -> "Tarjeta"
+}
 
 @Composable
 fun ContenidoMisTarjetas(
-    ultimosDigitosVisa: String,
-    tarjetaPrincipal: Boolean,
-    titularTarjeta: String,
-    vencimientoTarjeta: String,
-    onVincularTarjeta: (String, String, String) -> Boolean
+    repository: PagoFlexRepository,
+    usuarioId: Int,
+    tarjetas: List<Map<String, String>>,
+    onTarjetasCambiaron: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
+    val scope = rememberCoroutineScope()
+    val maximo = repository.maxTarjetas
 
-    var mostrarDialogo by remember {
-        mutableStateOf(false)
-    }
-
-    var numeroTarjeta by remember {
-        mutableStateOf("")
-    }
-
-    var titular by remember {
-        mutableStateOf("")
-    }
-
-    var vencimiento by remember {
-        mutableStateOf("")
-    }
-
-    var mensajeError by remember {
-        mutableStateOf("")
-    }
-
-    var mensajeExito by remember {
-        mutableStateOf("")
-    }
+    var mostrarDialogo by remember { mutableStateOf(false) }
+    var numeroTarjeta by remember { mutableStateOf("") }
+    var titular by remember { mutableStateOf("") }
+    var vencimiento by remember { mutableStateOf("") }
+    var mensajeError by remember { mutableStateOf("") }
+    var mensajeLista by remember { mutableStateOf("") }
+    var ocupado by remember { mutableStateOf(false) }
 
     fun cerrarDialogo() {
         numeroTarjeta = ""
@@ -290,126 +420,125 @@ fun ContenidoMisTarjetas(
         mostrarDialogo = false
     }
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "MÉTODOS DE PAGO REGISTRADOS",
+            text = "MÉTODOS DE PAGO (${tarjetas.size}/$maximo)",
             color = colores.onSurfaceVariant,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold
         )
 
-
-
-        if (ultimosDigitosVisa.isNotBlank()) {
-            TarjetaSeccion(
-                forma = RoundedCornerShape(16.dp),
-                colores = CardDefaults.cardColors(
-                    containerColor = colores.primaryContainer,
-                    contentColor = colores.onPrimaryContainer
-                ),
-                elevacion = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
-                ),
-                relleno = PaddingValues(20.dp),
-                separacion = 12.dp
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Tarjeta de demostración",
-                        modifier = Modifier.weight(1f),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-
-                    if (tarjetaPrincipal) {
-                        Text(
-                            text = "Principal",
-                            fontSize = 10.sp
-                        )
-                    }
-                }
-
-                Text(
-                    text = "•••• •••• •••• $ultimosDigitosVisa",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                )
-
-                if (titularTarjeta.isNotBlank()) {
-                    Text(
-                        text = titularTarjeta,
-                        fontSize = 13.sp
-                    )
-                }
-
-                if (vencimientoTarjeta.isNotBlank()) {
-                    val vigente =
-                        ValidacionesTarjeta.vencimientoVigente(
-                            vencimientoTarjeta
-                        )
-
-                    Text(
-                        text = if (vigente) {
-                            "Vence: $vencimientoTarjeta"
-                        } else {
-                            "Vencida: $vencimientoTarjeta"
-                        },
-                        color = if (vigente) {
-                            colores.onPrimaryContainer
-                        } else {
-                            colores.error
-                        },
-                        fontSize = 12.sp
-                    )
-                }
-            }
-        } else {
-
+        if (tarjetas.isEmpty()) {
             TarjetaSeccion(
                 forma = CardDefaults.shape,
                 colores = CardDefaults.cardColors(
                     containerColor = colores.surface,
                     contentColor = colores.onSurface
                 ),
-                elevacion = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
-                ),
+                elevacion = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 relleno = PaddingValues(20.dp),
                 separacion = 0.dp
             ) {
-                Text(
-                    text = "Aún no tienes tarjetas vinculadas."
-                )
+                Text("Aún no tienes tarjetas vinculadas.")
             }
         }
 
-        if (mensajeExito.isNotBlank()) {
-            Text(
-                text = mensajeExito,
-                color = colores.primary,
-                fontSize = 13.sp
-            )
+        tarjetas.forEach { tarjeta ->
+            val id = tarjeta["id"]?.toIntOrNull() ?: 0
+            val esPrincipal = tarjeta["principal"] == "1"
+            val venc = tarjeta["vencimiento"].orEmpty()
+            val vigente = ValidacionesTarjeta.vencimientoVigente(venc)
+
+            TarjetaSeccion(
+                forma = RoundedCornerShape(16.dp),
+                colores = CardDefaults.cardColors(
+                    containerColor = colores.primaryContainer,
+                    contentColor = colores.onPrimaryContainer
+                ),
+                elevacion = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                relleno = PaddingValues(18.dp),
+                separacion = 8.dp
+            ) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = tarjeta["marca"].orEmpty() + " de demostración",
+                        modifier = Modifier.weight(1f),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    if (esPrincipal) {
+                        Text("★ Principal", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Text(
+                    text = "•••• •••• •••• ${tarjeta["ultimosDigitos"].orEmpty()}",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                )
+                Text(text = tarjeta["titular"].orEmpty(), fontSize = 13.sp)
+                Text(
+                    text = if (vigente) "Vence: $venc" else "Vencida: $venc",
+                    color = if (vigente) colores.onPrimaryContainer else colores.error,
+                    fontSize = 12.sp
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (!esPrincipal) {
+                        BotonSecundario(
+                            texto = "Hacer principal",
+                            habilitado = !ocupado,
+                            onClick = {
+                                scope.launch {
+                                    ocupado = true
+                                    val ok = withContext(Dispatchers.IO) {
+                                        repository.marcarTarjetaPrincipal(id, usuarioId)
+                                    }
+                                    ocupado = false
+                                    mensajeLista = if (ok) "Tarjeta principal actualizada."
+                                    else "No se pudo actualizar la tarjeta."
+                                    onTarjetasCambiaron()
+                                }
+                            },
+                            altura = 40.dp,
+                            relleno = ButtonDefaults.ContentPadding
+                        )
+                    }
+                    BotonSecundario(
+                        texto = "Eliminar",
+                        habilitado = !ocupado,
+                        onClick = {
+                            scope.launch {
+                                ocupado = true
+                                val ok = withContext(Dispatchers.IO) {
+                                    repository.eliminarTarjeta(id, usuarioId)
+                                }
+                                ocupado = false
+                                mensajeLista = if (ok) "Tarjeta eliminada."
+                                else "No se pudo eliminar la tarjeta."
+                                onTarjetasCambiaron()
+                            }
+                        },
+                        colores = ButtonDefaults.outlinedButtonColors(contentColor = colores.error),
+                        altura = 40.dp,
+                        relleno = ButtonDefaults.ContentPadding
+                    )
+                }
+            }
         }
 
-
+        if (mensajeLista.isNotBlank()) {
+            Text(text = mensajeLista, color = colores.primary, fontSize = 13.sp)
+        }
 
         BotonPrincipal(
-            texto = if (ultimosDigitosVisa.isBlank()) {
-                "+ Vincular tarjeta de prueba"
-            } else {
-                "Reemplazar tarjeta de prueba"
-            },
+            texto = if (tarjetas.size >= maximo) "Límite de $maximo tarjetas alcanzado"
+            else "+ Agregar tarjeta de prueba",
+            habilitado = tarjetas.size < maximo && !ocupado,
             onClick = {
-                numeroTarjeta = ""
-                titular = ""
-                vencimiento = ""
-                mensajeError = ""
-                mensajeExito = ""
+                cerrarDialogo()
+                mensajeLista = ""
                 mostrarDialogo = true
             },
             modifier = Modifier.fillMaxWidth(),
@@ -425,142 +554,105 @@ fun ContenidoMisTarjetas(
         )
 
         Text(
-            text = "Simulación académica. Una tarjeta principal por usuario. " +
-                    "No se realizan cargos bancarios.",
+            text = "Simulación académica. Puedes registrar hasta $maximo tarjetas y " +
+                    "elegir con cuál pagar. No se realizan cargos bancarios.",
             color = colores.onSurfaceVariant,
             fontSize = 12.sp
         )
     }
 
-
-
     if (mostrarDialogo) {
         AlertDialog(
-            onDismissRequest = {
-                cerrarDialogo()
-            },
-
-            title = {
-                Text("Vincular tarjeta de prueba")
-            },
-
+            onDismissRequest = { cerrarDialogo() },
+            title = { Text("Agregar tarjeta de prueba") },
             text = {
                 Column(
-                    modifier = Modifier.verticalScroll(
-                        rememberScrollState()
-                    ),
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Usa datos ficticios. Solo se conservan " +
-                                "los últimos cuatro dígitos, el titular " +
-                                "y el vencimiento."
+                        "Usa datos ficticios. Solo se conservan los últimos cuatro " +
+                                "dígitos, el titular y el vencimiento."
                     )
 
-                    if (ultimosDigitosVisa.isNotBlank()) {
-                        Text(
-                            text = "La nueva tarjeta reemplazará a la actual.",
-                            fontSize = 12.sp
-                        )
-                    }
+                    CampoEditar(titular, { titular = it; mensajeError = "" }, "Titular", true)
 
-                    CampoTarjetaPerfil(
-                        valor = titular,
-                        onValorCambia = {
-                            titular = it
-                            mensajeError = ""
-                        },
-                        etiqueta = "Titular"
-                    )
-
-                    CampoTarjetaPerfil(
+                    CampoEditar(
                         valor = numeroTarjeta,
-                        onValorCambia = { entrada ->
-                            val limpio = entrada
-                                .replace(" ", "")
-                                .replace("-", "")
-
-                            if (
-                                limpio.length <= 16 &&
-                                limpio.all { it in '0'..'9' }
-                            ) {
+                        onCambia = { entrada ->
+                            val limpio = entrada.replace(" ", "").replace("-", "")
+                            if (limpio.length <= 16 && limpio.all { it in '0'..'9' }) {
                                 numeroTarjeta = limpio
                                 mensajeError = ""
                             }
                         },
                         etiqueta = "Número de tarjeta de prueba",
-                        ayuda = "16 dígitos ficticios.",
-                        tipoTeclado = KeyboardType.Number
+                        habilitado = true,
+                        teclado = KeyboardType.Number,
+                        ayuda = "16 dígitos ficticios. Empieza con 4 (Visa) o 5 (Mastercard)."
                     )
 
-                    CampoTarjetaPerfil(
+                    CampoEditar(
                         valor = vencimiento,
-                        onValorCambia = { entrada ->
+                        onCambia = { entrada ->
                             val limpio = entrada.replace("/", "")
-
-                            if (
-                                limpio.length <= 4 &&
-                                limpio.all { it in '0'..'9' }
-                            ) {
+                            if (limpio.length <= 4 && limpio.all { it in '0'..'9' }) {
                                 vencimiento = if (limpio.length > 2) {
                                     limpio.take(2) + "/" + limpio.drop(2)
-                                } else {
-                                    limpio
-                                }
-
+                                } else limpio
                                 mensajeError = ""
                             }
                         },
                         etiqueta = "Vencimiento MM/AA",
-                        placeholder = "12/30",
-                        tipoTeclado = KeyboardType.Number
+                        habilitado = true,
+                        teclado = KeyboardType.Number,
+                        ayuda = "Ejemplo: 12/30"
                     )
 
                     if (mensajeError.isNotBlank()) {
-                        Text(
-                            text = mensajeError,
-                            color = colores.error
-                        )
+                        Text(text = mensajeError, color = colores.error)
                     }
                 }
             },
-
             confirmButton = {
                 BotonPrincipal(
-                    texto = "Vincular",
+                    texto = if (ocupado) "Guardando..." else "Agregar",
+                    habilitado = !ocupado,
                     onClick = {
                         mensajeError = when {
-                            titular.isBlank() -> {
-                                "Ingresa el titular."
-                            }
-
-                            numeroTarjeta.length != 16 -> {
-                                "Ingresa exactamente 16 dígitos."
-                            }
-
-                            !ValidacionesTarjeta.vencimientoVigente(
-                                vencimiento
-                            ) -> {
-                                "Ingresa un vencimiento válido en MM/AA."
-                            }
-
+                            titular.isBlank() -> "Ingresa el titular."
+                            numeroTarjeta.length != 16 -> "Ingresa exactamente 16 dígitos."
+                            !ValidacionesTarjeta.vencimientoVigente(vencimiento) ->
+                                "Ingresa un vencimiento válido y vigente en MM/AA."
                             else -> ""
                         }
 
                         if (mensajeError.isBlank()) {
-                            val guardada = onVincularTarjeta(
-                                numeroTarjeta.takeLast(4),
-                                titular.trim(),
-                                vencimiento
-                            )
+                            scope.launch {
+                                ocupado = true
+                                var exito = false
+                                try {
+                                    exito = withContext(Dispatchers.IO) {
+                                        repository.agregarTarjeta(
+                                            usuarioId,
+                                            numeroTarjeta.takeLast(4),
+                                            titular.trim(),
+                                            vencimiento,
+                                            detectarMarca(numeroTarjeta)
+                                        )
+                                    }
+                                } catch (_: Exception) {
+                                    exito = false
+                                }
+                                ocupado = false
 
-                            if (guardada) {
-                                cerrarDialogo()
-                                mensajeExito =
-                                    "Tarjeta vinculada correctamente."
-                            } else {
-                                mensajeError = "No se pudo vincular. " +
-                                        "Vuelve a iniciar sesión."
+                                if (exito) {
+                                    cerrarDialogo()
+                                    mensajeLista = "Tarjeta agregada correctamente."
+                                    onTarjetasCambiaron()
+                                } else {
+                                    mensajeError = "No se pudo guardar la tarjeta. Revisa que no esté duplicada."
+                                }
                             }
                         }
                     },
@@ -571,45 +663,14 @@ fun ContenidoMisTarjetas(
                     relleno = ButtonDefaults.ContentPadding
                 )
             },
-
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        cerrarDialogo()
-                    }
-                ) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { cerrarDialogo() }) { Text("Cancelar") }
             }
         )
     }
 }
 
-
-@Composable
-private fun CampoTarjetaPerfil(
-    valor: String,
-    onValorCambia: (String) -> Unit,
-    etiqueta: String,
-    ayuda: String? = null,
-    placeholder: String? = null,
-    tipoTeclado: KeyboardType = KeyboardType.Text
-) {
-    CampoTexto(
-        valor = valor,
-        onValorCambia = onValorCambia,
-        etiqueta = etiqueta,
-        icono = null,
-        ayuda = ayuda,
-        placeholder = placeholder,
-        tipoTeclado = tipoTeclado,
-        forma = OutlinedTextFieldDefaults.shape,
-        colores = OutlinedTextFieldDefaults.colors(),
-        accionTeclado = ImeAction.Default,
-        reservarEspacioAyuda = false
-    )
-}
-
+// ───────────────────────── AJUSTES ─────────────────────────
 
 @Suppress("DEPRECATION")
 @Composable
@@ -620,14 +681,9 @@ fun ContenidoConfiguracion(
 ) {
     val colores = MaterialTheme.colorScheme
     val tema = LocalControlTemaPagoFlex.current
+    var mostrarTerminos by remember { mutableStateOf(false) }
 
-    var mostrarTerminos by remember {
-        mutableStateOf(false)
-    }
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = "PREFERENCIAS DE LA APLICACIÓN",
             color = colores.onSurfaceVariant,
@@ -639,17 +695,12 @@ fun ContenidoConfiguracion(
             icono = "🌙",
             titulo = "Modo oscuro",
             activado = tema.oscuro,
-            onCambiar = {
-                tema.cambiarModoOscuro(!tema.oscuro)
-            }
+            onCambiar = { tema.cambiarModoOscuro(!tema.oscuro) }
         )
 
         Text(
-            text = if (tema.sigueSistema) {
-                "Se está utilizando el tema del teléfono."
-            } else {
-                "Se está utilizando tu elección para PagoFlex."
-            },
+            text = if (tema.sigueSistema) "Se está utilizando el tema del teléfono."
+            else "Se está utilizando tu elección para PagoFlex.",
             color = colores.onSurfaceVariant,
             fontSize = 12.sp
         )
@@ -675,17 +726,14 @@ fun ContenidoConfiguracion(
         )
 
         Text(
-            text = "Las notificaciones siguen siendo una preferencia de " +
-                    "demostración: todavía no se envían avisos.",
+            text = "Las notificaciones siguen siendo una preferencia de demostración: " +
+                    "todavía no se envían avisos.",
             color = colores.onSurfaceVariant,
             fontSize = 11.sp
         )
 
-
         Card(
-            onClick = {
-                mostrarTerminos = true
-            },
+            onClick = { mostrarTerminos = true },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
@@ -694,29 +742,13 @@ fun ContenidoConfiguracion(
             )
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "📄",
-                    fontSize = 18.sp
-                )
-
+                Text("📄", fontSize = 18.sp)
                 Spacer(Modifier.width(12.dp))
-
-                Text(
-                    text = "Términos y condiciones",
-                    modifier = Modifier.weight(1f),
-                    fontSize = 13.sp
-                )
-
-                Text(
-                    text = "Ver",
-                    color = colores.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
+                Text("Términos y condiciones", modifier = Modifier.weight(1f), fontSize = 13.sp)
+                Text("Ver", color = colores.onSurfaceVariant, fontSize = 12.sp)
             }
         }
 
@@ -740,43 +772,24 @@ fun ContenidoConfiguracion(
 
     if (mostrarTerminos) {
         AlertDialog(
-            onDismissRequest = {
-                mostrarTerminos = false
-            },
-
-            title = {
-                Text("Términos y condiciones")
-            },
-
+            onDismissRequest = { mostrarTerminos = false },
+            title = { Text("Términos y condiciones") },
             text = {
                 Text(
-                    text = "PagoFlex es una demostración académica. " +
-                            "Los pagos y tarjetas son simulados. " +
-                            "No se realizan cargos bancarios. " +
-                            "Usa datos ficticios al vincular una tarjeta."
+                    "PagoFlex es una demostración académica. Los pagos y tarjetas son " +
+                            "simulados. No se realizan cargos bancarios. Usa datos ficticios " +
+                            "al vincular una tarjeta."
                 )
             },
-
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        mostrarTerminos = false
-                    }
-                ) {
-                    Text("Cerrar")
-                }
+                TextButton(onClick = { mostrarTerminos = false }) { Text("Cerrar") }
             }
         )
     }
 }
 
-
-
 @Composable
-fun CardItemPerfil(
-    label: String,
-    valor: String
-) {
+fun CardItemPerfil(label: String, valor: String) {
     val colores = MaterialTheme.colorScheme
 
     TarjetaSeccion(
@@ -785,27 +798,14 @@ fun CardItemPerfil(
             containerColor = colores.surface,
             contentColor = colores.onSurface
         ),
-        elevacion = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        ),
+        elevacion = CardDefaults.cardElevation(defaultElevation = 0.dp),
         relleno = PaddingValues(14.dp),
         separacion = 4.dp
     ) {
-        Text(
-            text = label,
-            color = colores.onSurfaceVariant,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            text = valor,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        Text(text = label, color = colores.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Text(text = valor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
-
 
 @Composable
 fun OpcionSwitchItem(
@@ -822,38 +822,24 @@ fun OpcionSwitchItem(
             containerColor = colores.surface,
             contentColor = colores.onSurface
         ),
-        elevacion = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        ),
-        relleno = PaddingValues(
-            horizontal = 14.dp,
-            vertical = 8.dp
-        ),
+        elevacion = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        relleno = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
         separacion = 0.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = icono,
-                fontSize = 18.sp
-            )
-
+            Text(text = icono, fontSize = 18.sp)
             Spacer(Modifier.width(12.dp))
-
             InterruptorConTexto(
                 texto = titulo,
                 activado = activado,
-                onCambio = {
-                    onCambiar()
-                },
+                onCambio = { onCambiar() },
                 modifier = Modifier.weight(1f),
                 filaPulsable = false,
                 rellenoVertical = 0.dp,
-                estiloTexto = LocalTextStyle.current.copy(
-                    fontSize = 13.sp
-                )
+                estiloTexto = LocalTextStyle.current.copy(fontSize = 13.sp)
             )
         }
     }

@@ -17,12 +17,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.data.PreguntasSecretas
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.CampoTexto
 import com.example.pagoflex.ui.components.CasillaConTexto
 import com.example.pagoflex.ui.components.InterruptorConTexto
+import com.example.pagoflex.ui.components.MarcaHorizontalPagoFlex
+import com.example.pagoflex.ui.components.SelectorDesplegable
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.viewmodel.FormularioViewModel
 
@@ -34,9 +37,7 @@ fun FormularioScreen(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    BackHandler(enabled = !ocupado) {
-        onVolverAlLogin()
-    }
+    BackHandler(enabled = !ocupado) { onVolverAlLogin() }
 
     Column(
         modifier = Modifier
@@ -44,50 +45,26 @@ fun FormularioScreen(
             .background(colores.background)
             .statusBarsPadding()
     ) {
-
-        TextButton(
-            onClick = onVolverAlLogin,
-            enabled = !ocupado
-        ) {
+        TextButton(onClick = onVolverAlLogin, enabled = !ocupado) {
             Text("← Volver al inicio de sesión")
         }
 
-
         if (ocupado) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth()
-            )
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
 
-        // FORMULARIO Y CAPA DE CARGA
-
-        Box(
-            modifier = Modifier.weight(1f)
-        ) {
-            ContenidoFormulario(
-                viewModel = viewModel
-            )
+        Box(modifier = Modifier.weight(1f)) {
+            ContenidoFormulario(viewModel = viewModel)
 
             if (ocupado) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = colores.background.copy(
-                        alpha = 0.95f
-                    )
+                    color = colores.background.copy(alpha = 0.95f)
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment =
-                                Alignment.CenterHorizontally
-                        ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator()
-
-                            Spacer(
-                                modifier = Modifier.height(12.dp)
-                            )
-
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text("Creando cuenta...")
                         }
                     }
@@ -97,13 +74,9 @@ fun FormularioScreen(
     }
 }
 
-
-
 @Suppress("DEPRECATION")
 @Composable
-private fun ContenidoFormulario(
-    viewModel: FormularioViewModel
-) {
+private fun ContenidoFormulario(viewModel: FormularioViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val colores = MaterialTheme.colorScheme
 
@@ -121,39 +94,11 @@ private fun ContenidoFormulario(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(40.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    color = colores.secondary,
-                    contentColor = colores.onSecondary
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "P",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(
-                    modifier = Modifier.width(10.dp)
-                )
-
-                Text(
-                    text = "PagoFlex",
-                    color = colores.onBackground,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            MarcaHorizontalPagoFlex(
+                tamanoIcono = 44.dp,
+                colorPago = colores.onBackground,
+                colorFlex = colores.tertiary
+            )
 
             Text(
                 text = "Crear cuenta",
@@ -168,17 +113,13 @@ private fun ContenidoFormulario(
                 fontSize = 15.sp
             )
 
-
-
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
                 colores = CardDefaults.cardColors(
                     containerColor = colores.surface,
                     contentColor = colores.onSurface
                 ),
-                elevacion = CardDefaults.cardElevation(
-                    defaultElevation = 2.dp
-                ),
+                elevacion = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 relleno = PaddingValues(20.dp),
                 separacion = 14.dp
             ) {
@@ -189,50 +130,35 @@ private fun ContenidoFormulario(
                     fontWeight = FontWeight.Bold
                 )
 
-
-                CampoTexto(
+                CampoFormulario(
                     valor = uiState.nombre,
-                    onValorCambia = viewModel::onNombreCambia,
+                    onCambia = viewModel::onNombreCambia,
                     etiqueta = "Nombre completo",
-                    error = uiState.errorNombre,
-                    forma = RoundedCornerShape(12.dp),
-                    colores = OutlinedTextFieldDefaults.colors(),
-                    accionTeclado = ImeAction.Default,
-                    reservarEspacioAyuda = false,
-                    mostrarMensajeError = false
+                    error = uiState.errorNombre
                 )
 
-                uiState.errorNombre?.let {
-                    ErrorFormulario(texto = it)
-                }
+                CampoFormulario(
+                    valor = uiState.rut,
+                    onCambia = viewModel::onRutCambia,
+                    etiqueta = "RUT",
+                    error = uiState.errorRut,
+                    ayuda = "Ejemplo: 12.345.678-5"
+                )
 
-
-                CampoTexto(
+                CampoFormulario(
                     valor = uiState.correo,
-                    onValorCambia = viewModel::onCorreoCambia,
+                    onCambia = viewModel::onCorreoCambia,
                     etiqueta = "Correo electrónico",
                     error = uiState.errorCorreo,
-                    tipoTeclado = KeyboardType.Email,
-                    forma = RoundedCornerShape(12.dp),
-                    colores = OutlinedTextFieldDefaults.colors(),
-                    accionTeclado = ImeAction.Default,
-                    reservarEspacioAyuda = false,
-                    mostrarMensajeError = false
+                    teclado = KeyboardType.Email
                 )
-
-                uiState.errorCorreo?.let {
-                    ErrorFormulario(texto = it)
-                }
-
-
 
                 CampoContrasena(
                     valor = uiState.contrasena,
                     onValorCambia = viewModel::onContrasenaCambia,
                     etiqueta = "Contraseña",
                     visible = uiState.contrasenaVisible,
-                    onAlternarVisible =
-                        viewModel::onAlternarVisibilidad,
+                    onAlternarVisible = viewModel::onAlternarVisibilidad,
                     error = uiState.errorContrasena,
                     mostrarCandado = false,
                     usarTextoVisibilidad = true,
@@ -241,20 +167,14 @@ private fun ContenidoFormulario(
                     reservarEspacioError = false,
                     mostrarMensajeError = false
                 )
-
-                uiState.errorContrasena?.let {
-                    ErrorFormulario(texto = it)
-                }
-
-
+                uiState.errorContrasena?.let { ErrorFormulario(it) }
 
                 CampoContrasena(
                     valor = uiState.repetirContrasena,
                     onValorCambia = viewModel::onRepetirCambia,
-                    etiqueta = "Repetir contraseña",
+                    etiqueta = "Confirmar contraseña",
                     visible = uiState.repetirVisible,
-                    onAlternarVisible =
-                        viewModel::onAlternarRepetirVisibilidad,
+                    onAlternarVisible = viewModel::onAlternarRepetirVisibilidad,
                     error = uiState.errorRepetir,
                     mostrarCandado = false,
                     usarTextoVisibilidad = true,
@@ -263,12 +183,61 @@ private fun ContenidoFormulario(
                     reservarEspacioError = false,
                     mostrarMensajeError = false
                 )
-
-                uiState.errorRepetir?.let {
-                    ErrorFormulario(texto = it)
-                }
+                uiState.errorRepetir?.let { ErrorFormulario(it) }
             }
 
+            TarjetaSeccion(
+                forma = RoundedCornerShape(24.dp),
+                colores = CardDefaults.cardColors(
+                    containerColor = colores.surface,
+                    contentColor = colores.onSurface
+                ),
+                elevacion = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                relleno = PaddingValues(20.dp),
+                separacion = 14.dp
+            ) {
+                Text(
+                    text = "Preguntas secretas",
+                    color = colores.primary,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Te servirán para recuperar tu cuenta si olvidas la contraseña.",
+                    color = colores.onSurfaceVariant,
+                    fontSize = 13.sp
+                )
+
+                SelectorDesplegable(
+                    etiqueta = "Pregunta secreta 1",
+                    textoSeleccionado = uiState.pregunta1,
+                    opciones = PreguntasSecretas.lista,
+                    onSeleccion = { viewModel.onPregunta1Cambia(PreguntasSecretas.lista[it]) },
+                    error = uiState.errorPregunta1
+                )
+
+                CampoFormulario(
+                    valor = uiState.respuesta1,
+                    onCambia = viewModel::onRespuesta1Cambia,
+                    etiqueta = "Respuesta 1",
+                    error = uiState.errorRespuesta1
+                )
+
+                SelectorDesplegable(
+                    etiqueta = "Pregunta secreta 2",
+                    textoSeleccionado = uiState.pregunta2,
+                    opciones = PreguntasSecretas.lista,
+                    onSeleccion = { viewModel.onPregunta2Cambia(PreguntasSecretas.lista[it]) },
+                    error = uiState.errorPregunta2
+                )
+
+                CampoFormulario(
+                    valor = uiState.respuesta2,
+                    onCambia = viewModel::onRespuesta2Cambia,
+                    etiqueta = "Respuesta 2",
+                    error = uiState.errorRespuesta2
+                )
+            }
 
 
             TarjetaSeccion(
@@ -277,9 +246,7 @@ private fun ContenidoFormulario(
                     containerColor = colores.surface,
                     contentColor = colores.onSurface
                 ),
-                elevacion = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
-                ),
+                elevacion = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 relleno = PaddingValues(20.dp),
                 separacion = 12.dp
             ) {
@@ -296,17 +263,12 @@ private fun ContenidoFormulario(
                     onCambio = viewModel::onNoticiasCambia,
                     filaPulsable = false,
                     rellenoVertical = 0.dp,
-                    estiloTexto = LocalTextStyle.current.copy(
-                        fontSize = 14.sp
-                    ),
+                    estiloTexto = LocalTextStyle.current.copy(fontSize = 14.sp),
                     colorTexto = colores.onSurface
                 )
             }
 
-
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 CasillaConTexto(
                     texto = "Acepto los términos y condiciones",
                     marcado = uiState.aceptaTerminos,
@@ -314,18 +276,20 @@ private fun ContenidoFormulario(
                     filaPulsable = false,
                     rellenoVertical = 0.dp,
                     separacionTexto = 0.dp,
-                    estiloTexto = LocalTextStyle.current.copy(
-                        fontSize = 14.sp
-                    ),
+                    estiloTexto = LocalTextStyle.current.copy(fontSize = 14.sp),
                     colorTexto = colores.onBackground,
                     textoOcupaEspacio = true
                 )
-
-                uiState.errorTerminos?.let {
-                    ErrorFormulario(texto = it)
-                }
+                uiState.errorTerminos?.let { ErrorFormulario(it) }
             }
 
+            uiState.errorRegistro?.let {
+                Text(
+                    text = it,
+                    color = colores.error,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -359,18 +323,40 @@ private fun ContenidoFormulario(
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
 
+@Composable
+private fun CampoFormulario(
+    valor: String,
+    onCambia: (String) -> Unit,
+    etiqueta: String,
+    error: String?,
+    teclado: KeyboardType = KeyboardType.Text,
+    ayuda: String? = null
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        CampoTexto(
+            valor = valor,
+            onValorCambia = onCambia,
+            etiqueta = etiqueta,
+            error = error,
+            tipoTeclado = teclado,
+            ayuda = ayuda,
+            forma = RoundedCornerShape(12.dp),
+            colores = OutlinedTextFieldDefaults.colors(),
+            accionTeclado = ImeAction.Default,
+            reservarEspacioAyuda = false,
+            mostrarMensajeError = false
+        )
+        error?.let { ErrorFormulario(it) }
+    }
+}
 
 @Composable
-private fun ErrorFormulario(
-    texto: String
-) {
+private fun ErrorFormulario(texto: String) {
     Text(
         text = texto,
         color = MaterialTheme.colorScheme.error,
