@@ -115,7 +115,6 @@ fun AdminScreen(
         pasaFiltro && pasaBusqueda
     }
 
-    // ── Acciones ──
     fun limpiarFormulario() {
         deudaEditandoId = null
         usuarioSeleccionadoId = null
@@ -544,8 +543,6 @@ fun AdminScreen(
     }
 }
 
-// ═══════════════════════ PANEL: RESUMEN ═══════════════════════
-
 @Composable
 private fun PanelResumen(
     nombre: String,
@@ -721,8 +718,6 @@ private fun BotonAcceso(
     }
 }
 
-// ═══════════════════════ PANEL: DEUDAS ═══════════════════════
-
 @Composable
 private fun PanelDeudas(
     deudas: List<Map<String, String>>,
@@ -890,7 +885,6 @@ private fun PanelDeudas(
     }
 }
 
-// ═══════════════════════ PANEL: CLIENTES ═══════════════════════
 
 @Composable
 private fun PanelClientes(
@@ -984,7 +978,6 @@ private fun PanelClientes(
     }
 }
 
-// ═══════════════════════ PANEL: FORMULARIO ═══════════════════════
 
 @Composable
 private fun PanelFormulario(

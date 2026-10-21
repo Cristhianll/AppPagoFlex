@@ -54,7 +54,6 @@ fun PagoFlexApp(
     val usuarioId = sesion?.get("id")?.toIntOrNull()
     val rol = sesion?.get("rol")
 
-    // Tarjeta elegida: la seleccionada, o la principal, o la primera
     val tarjetaElegida = tarjetas.firstOrNull { it["id"] == tarjetaSeleccionadaId }
         ?: tarjetas.firstOrNull { it["principal"] == "1" }
         ?: tarjetas.firstOrNull()
@@ -246,7 +245,6 @@ fun PagoFlexApp(
         }
     }
 
-    // Registro: cuando el formulario es válido, se guarda en la base de datos
     LaunchedEffect(formularioState.registroExitoso, modo) {
         if (modo == "registro" && formularioState.registroExitoso) {
             ocupado = true
@@ -299,7 +297,6 @@ fun PagoFlexApp(
     }
 
     BackHandler(enabled = ocupado && pantalla == "detallePago") {
-        // Espera a que termine el registro del pago.
     }
 
     when {
@@ -315,7 +312,6 @@ fun PagoFlexApp(
             )
         }
 
-        // RECUPERAR CUENTA
         sesion == null && modo == "recuperar" -> {
             RecuperarCuentaScreen(
                 repository = repository,
@@ -330,7 +326,6 @@ fun PagoFlexApp(
             )
         }
 
-        // LOGIN
         sesion == null -> {
             LoginScreen(
                 correo = correo,
@@ -393,7 +388,6 @@ fun PagoFlexApp(
             )
         }
 
-        // ADMIN
         rol == "ADMIN" -> {
             AdminScreen(
                 repository = repository,
@@ -402,7 +396,6 @@ fun PagoFlexApp(
             )
         }
 
-        // USUARIO
         else -> {
             val usuario = sesion.orEmpty()
 
