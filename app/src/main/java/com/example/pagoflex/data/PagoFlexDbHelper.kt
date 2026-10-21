@@ -234,9 +234,6 @@ class PagoFlexDbHelper(context: Context) :
         return if (id == -1L) "No se pudo crear la cuenta." else null
     }
 
-
-
-    // null = correo no existe · lista vacía = sin preguntas configuradas · 2 elementos = OK
     fun obtenerPreguntas(correo: String): List<String>? {
         readableDatabase.rawQuery(
             "SELECT pregunta1, pregunta2 FROM usuarios WHERE correo = ?",

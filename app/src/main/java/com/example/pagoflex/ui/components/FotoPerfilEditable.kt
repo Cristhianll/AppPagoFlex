@@ -1,5 +1,6 @@
 package com.example.pagoflex.ui.components
 
+import android.os.Build
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -88,6 +89,7 @@ fun FotoPerfilEditable(
     var mostrarOpciones by remember { mutableStateOf(false) }
     var mostrarExplicacion by remember { mutableStateOf(false) }
     var mostrarPermisoDenegado by remember { mutableStateOf(false) }
+    var mostrarExplicacionGaleria by remember { mutableStateOf(false) }
 
     // Carga desde la BD (y migra la foto antigua guardada en el teléfono, si existe)
     LaunchedEffect(usuarioId) {
@@ -174,6 +176,54 @@ fun FotoPerfilEditable(
             procesarFoto { decodificarReducida(context, uri) }
         }
     }
+    fun abrirGaleria() {
+        try {
+            mensaje = ""
+            galeriaLauncher.launch("image/*")
+        } catch (_: ActivityNotFoundException) {
+            mensaje = "No hay una aplicación disponible para elegir imágenes."
+        } catch (_: SecurityException) {
+            mensaje = "No se pudo acceder a la imagen. Revisa los permisos."
+        }
+    }
+
+    fun tienePermisoGaleria(): Boolean {
+        fun concedido(permiso: String): Boolean {
+            return ContextCompat.checkSelfPermission(
+                context,
+                permiso
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
+        return when {
+            Build.VERSION.SDK_INT >= 34 -> {
+                concedido(Manifest.permission.READ_MEDIA_IMAGES) ||
+                        concedido(
+                            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                        )
+            }
+
+            Build.VERSION.SDK_INT >= 33 -> {
+                concedido(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+
+            else -> {
+                concedido(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
+    }
+
+    val permisoGaleriaLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        if (tienePermisoGaleria()) {
+            abrirGaleria()
+        } else {
+            mensaje =
+                "No autorizaste el acceso a las fotos. No se cambió tu foto. " +
+                        "Puedes revisar los permisos en los ajustes de PagoFlex."
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -240,13 +290,20 @@ fun FotoPerfilEditable(
                             ) == PackageManager.PERMISSION_GRANTED
                             if (permiso) abrirCamara() else mostrarExplicacion = true
                         }
-                    ) { Text("📷  Tomar foto") }
+                    ) { Text("Tomar foto") }
                     TextButton(
                         onClick = {
                             mostrarOpciones = false
-                            galeriaLauncher.launch("image/*")
+
+                            if (tienePermisoGaleria()) {
+                                abrirGaleria()
+                            } else {
+                                mostrarExplicacionGaleria = true
+                            }
                         }
-                    ) { Text("🖼️  Elegir de la galería") }
+                    ) {
+                        Text("Elegir de la galería")
+                    }
                 }
             },
             confirmButton = {
@@ -308,6 +365,59 @@ fun FotoPerfilEditable(
             },
             dismissButton = {
                 TextButton(onClick = { mostrarPermisoDenegado = false }) { Text("Cerrar") }
+            }
+        )
+    }
+    if (mostrarExplicacionGaleria) {
+        AlertDialog(
+            onDismissRequest = {
+                mostrarExplicacionGaleria = false
+            },
+            title = {
+                Text("Permiso de fotos")
+            },
+            text = {
+                Text(
+                    "PagoFlex solicita permiso de acceso a tus fotos para " +
+                            "actualizar tu imagen de perfil. En versiones compatibles " +
+                            "puedes permitir el acceso solo a fotos seleccionadas. " +
+                            "La foto que elijas se guardará en tu cuenta de PagoFlex."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostrarExplicacionGaleria = false
+
+                        val permisos = when {
+                            Build.VERSION.SDK_INT >= 34 -> arrayOf(
+                                Manifest.permission.READ_MEDIA_IMAGES,
+                                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                            )
+
+                            Build.VERSION.SDK_INT >= 33 -> arrayOf(
+                                Manifest.permission.READ_MEDIA_IMAGES
+                            )
+
+                            else -> arrayOf(
+                                Manifest.permission.READ_EXTERNAL_STORAGE
+                            )
+                        }
+
+                        permisoGaleriaLauncher.launch(permisos)
+                    }
+                ) {
+                    Text("Continuar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        mostrarExplicacionGaleria = false
+                    }
+                ) {
+                    Text("Cancelar")
+                }
             }
         )
     }
