@@ -18,8 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.PagoFlexRepository
-import com.example.pagoflex.data.ValidacionesDeuda
-import com.example.pagoflex.data.ValidacionesRut
+import com.example.pagoflex.validation.ValidacionesDeuda
+import com.example.pagoflex.validation.ValidacionesRut
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoTexto
@@ -93,7 +93,6 @@ fun AdminScreen(
     var menuExpandido by remember { mutableStateOf(false) }
     var mostrarConfiguracion by remember { mutableStateOf(false) }
 
-    // ── Estadísticas ──
     val pendientes = deudas.filter { it["estado"] == "PENDIENTE" }
     val pagadas = deudas.filter { it["estado"] == "PAGADA" }
     val vencidas = pendientes.filter { estaVencida(it) }
@@ -885,7 +884,6 @@ private fun PanelDeudas(
     }
 }
 
-
 @Composable
 private fun PanelClientes(
     clientes: List<Map<String, String>>,
@@ -977,7 +975,6 @@ private fun PanelClientes(
         }
     }
 }
-
 
 @Composable
 private fun PanelFormulario(

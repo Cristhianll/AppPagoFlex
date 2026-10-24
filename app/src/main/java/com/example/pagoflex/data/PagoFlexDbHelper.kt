@@ -7,6 +7,11 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import java.security.MessageDigest
 import java.util.Locale
+import com.example.pagoflex.validation.PreguntasSecretas
+import com.example.pagoflex.validation.ValidacionesRut
+import com.example.pagoflex.validation.ValidacionesCuenta
+import com.example.pagoflex.validation.ValidacionesDeuda
+import com.example.pagoflex.validation.ValidacionesTarjeta
 
 class PagoFlexDbHelper(context: Context) :
     SQLiteOpenHelper(context, "pagoflex.db", null, 3) {

@@ -51,7 +51,6 @@ fun ResultadoPagoScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Tarjeta de Comprobante / Voucher
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -67,7 +66,6 @@ fun ResultadoPagoScreen(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Ícono de éxito animado / destacado
                     Box(
                         modifier = Modifier
                             .size(64.dp)
@@ -101,7 +99,6 @@ fun ResultadoPagoScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Monto grande
                     Text(
                         text = formato.format(montoPagado),
                         fontSize = 32.sp,
@@ -113,7 +110,6 @@ fun ResultadoPagoScreen(
                     HorizontalDivider(color = colores.outlineVariant)
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Detalles en filas organizadas
                     DetalleFilaVoucher(etiqueta = "Concepto", valor = concepto)
 
                     if (tarjeta.isNotBlank()) {
@@ -130,7 +126,6 @@ fun ResultadoPagoScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botones de acción inferiores
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)

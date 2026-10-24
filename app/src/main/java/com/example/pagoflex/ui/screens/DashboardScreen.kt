@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pagoflex.data.ValidacionesDeuda
+import com.example.pagoflex.validation.ValidacionesDeuda
 import com.example.pagoflex.ui.components.BarraNavegacionPagoFlex
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.MarcaHorizontalPagoFlex

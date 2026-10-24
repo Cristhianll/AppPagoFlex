@@ -1,7 +1,7 @@
 package com.example.pagoflex.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.example.pagoflex.data.ValidacionesCuenta
+import com.example.pagoflex.validation.ValidacionesCuenta
 import com.example.pagoflex.model.FormularioUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

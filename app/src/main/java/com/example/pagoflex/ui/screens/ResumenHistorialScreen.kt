@@ -36,7 +36,6 @@ fun ResumenHistorialScreen(
 ) {
     val colores = MaterialTheme.colorScheme
 
-    // Colores locales: no modifican el tema del resto de la app.
     val azulOscuro = Color(0xFF0C2E48)
     val azulMedio = Color(0xFF164E65)
     val verdeSuave = Color(0xFFCFFF9E)

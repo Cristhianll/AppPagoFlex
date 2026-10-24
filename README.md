@@ -147,24 +147,31 @@ La aplicación utiliza una base de datos local. No requiere configurar un servid
 com.example.pagoflex
 ├── data
 │   ├── PagoFlexDbHelper.kt
-│   ├── PagoFlexRepository.kt
+│   └── PagoFlexRepository.kt
+├── model
+│   ├── FormularioUiState.kt
+│   └── PagoUiState.kt
+├── validation
+│   ├── PreguntasSecretas.kt
 │   ├── ValidacionesCuenta.kt
 │   ├── ValidacionesDeuda.kt
+│   ├── ValidacionesRut.kt
 │   └── ValidacionesTarjeta.kt
-├── model
-│   └── PagoUiState.kt
+├── viewmodel
+│   ├── FormularioViewModel.kt
+│   └── PagoViewModel.kt
 └── ui
     ├── components
     ├── navigation
     ├── screens
     ├── styles
-    ├── theme
-    └── viewmodel
+    └── theme
 ```
 
 ### Responsabilidades
 
-- `data`: acceso a SQLite, repositorio y validaciones de datos.
+- `data`: acceso a SQLite y repositorio.
+- `validation`: reglas de validación (cuenta, RUT, deuda, tarjeta y preguntas secretas).
 - `model`: estructuras utilizadas por la aplicación.
 - `components`: elementos reutilizables de interfaz.
 - `navigation`: navegación entre pantallas.

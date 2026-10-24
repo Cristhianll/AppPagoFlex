@@ -7,7 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.example.pagoflex.data.PagoFlexRepository
-import com.example.pagoflex.data.ValidacionesTarjeta
+import com.example.pagoflex.validation.ValidacionesTarjeta
 import com.example.pagoflex.ui.components.CargaPagoFlex
 import com.example.pagoflex.ui.components.MensajePagoFlex
 import com.example.pagoflex.ui.screens.*

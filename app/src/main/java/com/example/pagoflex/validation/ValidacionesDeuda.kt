@@ -1,4 +1,4 @@
-package com.example.pagoflex.data
+package com.example.pagoflex.validation
 
 import java.text.ParsePosition
 import java.text.SimpleDateFormat

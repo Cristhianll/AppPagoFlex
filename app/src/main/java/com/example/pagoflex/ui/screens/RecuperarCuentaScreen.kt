@@ -15,7 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.PagoFlexRepository
-import com.example.pagoflex.data.ValidacionesCuenta
+import com.example.pagoflex.validation.ValidacionesCuenta
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.CampoTexto

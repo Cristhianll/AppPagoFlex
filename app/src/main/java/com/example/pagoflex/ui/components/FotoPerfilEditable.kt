@@ -91,7 +91,6 @@ fun FotoPerfilEditable(
     var mostrarPermisoDenegado by remember { mutableStateOf(false) }
     var mostrarExplicacionGaleria by remember { mutableStateOf(false) }
 
-    // Carga desde la BD (y migra la foto antigua guardada en el teléfono, si existe)
     LaunchedEffect(usuarioId) {
         cargando = true
         try {

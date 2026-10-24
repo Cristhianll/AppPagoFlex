@@ -15,10 +15,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.PagoFlexRepository
-import com.example.pagoflex.data.PreguntasSecretas
+import com.example.pagoflex.validation.PreguntasSecretas
 
-import com.example.pagoflex.data.ValidacionesRut
-import com.example.pagoflex.data.ValidacionesTarjeta
+import com.example.pagoflex.validation.ValidacionesRut
+import com.example.pagoflex.validation.ValidacionesTarjeta
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoTexto

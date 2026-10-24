@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pagoflex.data.ValidacionesDeuda
+import com.example.pagoflex.validation.ValidacionesDeuda
 import com.example.pagoflex.ui.components.BarraNavegacionPagoFlex
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
@@ -63,11 +63,8 @@ fun PagosScreen(
         it["monto"]?.toDoubleOrNull() ?: 0.0
     }
 
-
     Scaffold(
         containerColor = colores.background,
-
-
 
         topBar = {
             TopAppBar(
@@ -107,8 +104,6 @@ fun PagosScreen(
             )
         },
 
-
-
         bottomBar = {
             BarraNavegacionPagoFlex(
                 seccionActual = SeccionPagoFlex.PAGOS,
@@ -125,7 +120,6 @@ fun PagosScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // CARGA
 
             if (cargando) {
                 item {
@@ -136,8 +130,6 @@ fun PagosScreen(
                     )
                 }
             }
-
-
 
             item {
                 TarjetaSeccion(
@@ -172,8 +164,6 @@ fun PagosScreen(
                     )
                 }
             }
-
-
 
             if (deudas.isEmpty() && !cargando) {
                 item {
@@ -213,7 +203,6 @@ fun PagosScreen(
                     }
                 }
             }
-
 
             items(
                 items = deudas,
