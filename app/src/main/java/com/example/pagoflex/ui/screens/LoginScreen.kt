@@ -1,6 +1,5 @@
 package com.example.pagoflex.ui.screens
 
-import android.util.Patterns
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,10 +21,12 @@ import com.example.pagoflex.ui.components.CampoTexto
 import com.example.pagoflex.ui.components.IconoPagoFlex
 import com.example.pagoflex.ui.components.NombrePagoFlex
 import com.example.pagoflex.ui.components.TarjetaSeccion
+import com.example.pagoflex.ui.styles.EstilosCampo
 import com.example.pagoflex.ui.theme.Acento
 import com.example.pagoflex.ui.theme.Blanco
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
 import com.example.pagoflex.ui.theme.PrimarioOscuro
+import com.example.pagoflex.validation.ValidacionesCuenta
 
 @Suppress("DEPRECATION")
 @Composable
@@ -33,6 +34,7 @@ fun LoginScreen(
     correo: String,
     clave: String,
     mensaje: String,
+    mensajeExito: Boolean = false,
     ocupado: Boolean,
     onCorreo: (String) -> Unit,
     onClave: (String) -> Unit,
@@ -45,10 +47,10 @@ fun LoginScreen(
 
     val colorFondo = if (tema.oscuro) colores.background else PrimarioOscuro
     val colorSubtitulo = Blanco.copy(alpha = 0.85f)
-    val colorTextoDemo = Blanco.copy(alpha = 0.85f)
 
     var mostrarClave by remember { mutableStateOf(false) }
-    var errorLocal by remember { mutableStateOf("") }
+    var errorCorreo by remember { mutableStateOf<String?>(null) }
+    var errorClave by remember { mutableStateOf<String?>(null) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -98,57 +100,46 @@ fun LoginScreen(
 
                 CampoTexto(
                     valor = correo,
-                    onValorCambia = {
-                        errorLocal = ""
-                        onCorreo(it)
-                    },
+                    onValorCambia = { errorCorreo = null; onCorreo(it) },
                     etiqueta = "Correo electrónico",
                     icono = null,
                     modifier = Modifier.fillMaxWidth(),
+                    error = errorCorreo,
                     tipoTeclado = KeyboardType.Email,
                     habilitado = !ocupado,
-                    forma = OutlinedTextFieldDefaults.shape,
-                    colores = OutlinedTextFieldDefaults.colors(),
-                    accionTeclado = ImeAction.Default,
+                    accionTeclado = ImeAction.Next,
                     reservarEspacioAyuda = false
                 )
 
                 CampoContrasena(
                     valor = clave,
-                    onValorCambia = {
-                        errorLocal = ""
-                        onClave(it)
-                    },
+                    onValorCambia = { errorClave = null; onClave(it) },
                     etiqueta = "Contraseña",
                     visible = mostrarClave,
                     onAlternarVisible = { mostrarClave = !mostrarClave },
                     modifier = Modifier.fillMaxWidth(),
+                    error = errorClave,
                     habilitado = !ocupado,
                     mostrarCandado = false,
                     usarTextoVisibilidad = true,
-                    forma = OutlinedTextFieldDefaults.shape,
-                    colores = OutlinedTextFieldDefaults.colors(),
+                    forma = EstilosCampo.forma,
                     reservarEspacioError = false
                 )
 
-                if (errorLocal.isNotBlank()) {
-                    Text(text = errorLocal, color = colores.error)
-                }
-
                 if (mensaje.isNotBlank()) {
-                    Text(text = mensaje, color = colores.onSurfaceVariant)
+                    Text(
+                        text = mensaje,
+                        color = if (mensajeExito) colores.primary else colores.error,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
 
                 BotonPrincipal(
                     texto = if (ocupado) "Ingresando..." else "Ingresar",
                     onClick = {
-                        errorLocal = when {
-                            !Patterns.EMAIL_ADDRESS.matcher(correo.trim()).matches() ->
-                                "Ingresa un correo válido."
-                            clave.isBlank() -> "Ingresa tu contraseña."
-                            else -> ""
-                        }
-                        if (errorLocal.isBlank()) onEntrar()
+                        errorCorreo = ValidacionesCuenta.correo(correo)
+                        errorClave = if (clave.isEmpty()) "Ingresa tu contraseña" else null
+                        if (errorCorreo == null && errorClave == null) onEntrar()
                     },
                     modifier = Modifier.fillMaxWidth(),
                     habilitado = !ocupado,
@@ -191,7 +182,6 @@ fun LoginScreen(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
         }
     }
 }

@@ -16,6 +16,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.PagoFlexRepository
 import com.example.pagoflex.validation.ValidacionesDeuda
@@ -26,12 +32,12 @@ import com.example.pagoflex.ui.components.CampoTexto
 import com.example.pagoflex.ui.components.IconoPagoFlex
 import com.example.pagoflex.ui.components.NombrePagoFlex
 import com.example.pagoflex.ui.components.SelectorDesplegable
+import com.example.pagoflex.ui.styles.EstilosCampo
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.NumberFormat
-import java.util.Locale
+
 
 private enum class SeccionAdmin(val titulo: String, val icono: String) {
     RESUMEN("Resumen", "📊"),
@@ -46,6 +52,12 @@ private enum class FiltroDeuda(val titulo: String) {
     VENCIDAS("Vencidas"),
     PAGADAS("Pagadas")
 }
+
+private data class Acceso(
+    val icono: String,
+    val texto: String,
+    val onClick: () -> Unit
+)
 
 private fun estaVencida(deuda: Map<String, String>): Boolean =
     deuda["estado"] == "PENDIENTE" &&
@@ -67,6 +79,9 @@ fun AdminScreen(
     val colores = MaterialTheme.colorScheme
     val tema = LocalControlTemaPagoFlex.current
     val scope = rememberCoroutineScope()
+
+    // GESTOR crea/edita/elimina deudas. ADMIN solo consulta.
+    val puedeGestionar = usuario["rol"] == "GESTOR"
 
     val formatoMoneda = remember { NumberFormat.getCurrencyInstance(Locale("es", "CL")) }
 
@@ -158,6 +173,7 @@ fun AdminScreen(
     }
 
     fun irANuevaDeuda(idCliente: String? = null) {
+        if (!puedeGestionar) return
         limpiarFormulario()
         usuarioSeleccionadoId = idCliente
         mensaje = ""
@@ -165,7 +181,7 @@ fun AdminScreen(
     }
 
     fun guardarDeuda() {
-        if (ocupado) return
+        if (!puedeGestionar || ocupado) return
 
         val idUsuario = usuarioSeleccionadoId?.toIntOrNull()
         val montoIngresado = monto.trim().replace(",", ".").toDoubleOrNull()
@@ -230,7 +246,7 @@ fun AdminScreen(
     }
 
     fun editarDeuda(deuda: Map<String, String>) {
-        if (ocupado) return
+        if (!puedeGestionar || ocupado) return
 
         val id = deuda["id"]?.toIntOrNull()
         if (id == null) {
@@ -252,7 +268,7 @@ fun AdminScreen(
     }
 
     fun eliminarDeuda(deuda: Map<String, String>) {
-        if (ocupado) return
+        if (!puedeGestionar || ocupado) return
 
         val id = deuda["id"]?.toIntOrNull()
         deudaAEliminar = null
@@ -317,7 +333,11 @@ fun AdminScreen(
                                 colorPago = colores.onPrimary,
                                 colorFlex = colores.tertiary
                             )
-                            Text("Panel administrador", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                text = if (puedeGestionar) "Panel de gestión"
+                                else "Panel administrador · solo lectura",
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
                 },
@@ -355,26 +375,28 @@ fun AdminScreen(
 
         bottomBar = {
             NavigationBar(containerColor = colores.surface, contentColor = colores.onSurface) {
-                SeccionAdmin.entries.forEach { s ->
-                    NavigationBarItem(
-                        selected = seccion == s,
-                        onClick = {
-                            if (s == SeccionAdmin.NUEVA && deudaEditandoId == null) {
-                                mensaje = ""
-                            }
-                            seccion = s
-                        },
-                        icon = { Text(s.icono) },
-                        label = { Text(s.titulo, maxLines = 1) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = colores.onSecondaryContainer,
-                            selectedTextColor = colores.onSurface,
-                            indicatorColor = colores.secondaryContainer,
-                            unselectedIconColor = colores.onSurfaceVariant,
-                            unselectedTextColor = colores.onSurfaceVariant
+                SeccionAdmin.entries
+                    .filter { puedeGestionar || it != SeccionAdmin.NUEVA }
+                    .forEach { s ->
+                        NavigationBarItem(
+                            selected = seccion == s,
+                            onClick = {
+                                if (s == SeccionAdmin.NUEVA && deudaEditandoId == null) {
+                                    mensaje = ""
+                                }
+                                seccion = s
+                            },
+                            icon = { Text(s.icono) },
+                            label = { Text(s.titulo, maxLines = 1) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = colores.onSecondaryContainer,
+                                selectedTextColor = colores.onSurface,
+                                indicatorColor = colores.secondaryContainer,
+                                unselectedIconColor = colores.onSurfaceVariant,
+                                unselectedTextColor = colores.onSurfaceVariant
+                            )
                         )
-                    )
-                }
+                    }
             }
         }
     ) { padding ->
@@ -405,6 +427,7 @@ fun AdminScreen(
             when (seccion) {
                 SeccionAdmin.RESUMEN -> PanelResumen(
                     nombre = usuario["nombre"].orEmpty().ifBlank { "Administrador" },
+                    puedeGestionar = puedeGestionar,
                     totalClientes = usuarios.size,
                     totalPendientes = pendientes.size,
                     totalVencidas = vencidas.size,
@@ -427,6 +450,7 @@ fun AdminScreen(
 
                 SeccionAdmin.DEUDAS -> PanelDeudas(
                     deudas = deudasFiltradas,
+                    puedeGestionar = puedeGestionar,
                     filtro = filtro,
                     onFiltro = { filtro = it },
                     busqueda = busqueda,
@@ -440,6 +464,7 @@ fun AdminScreen(
                 SeccionAdmin.CLIENTES -> PanelClientes(
                     clientes = usuarios,
                     deudas = deudas,
+                    puedeGestionar = puedeGestionar,
                     formatoMoneda = formatoMoneda,
                     onNuevaDeudaPara = { irANuevaDeuda(it) },
                     onVerDeudasDe = { nombre ->
@@ -449,23 +474,31 @@ fun AdminScreen(
                     }
                 )
 
-                SeccionAdmin.NUEVA -> PanelFormulario(
-                    editandoId = deudaEditandoId,
-                    clientes = usuarios,
-                    usuarioSeleccionadoId = usuarioSeleccionadoId,
-                    onUsuario = { usuarioSeleccionadoId = it },
-                    concepto = concepto, onConcepto = { concepto = it },
-                    empresa = empresa, onEmpresa = { empresa = it },
-                    monto = monto, onMonto = { monto = it },
-                    vencimiento = vencimiento, onVencimiento = { vencimiento = it },
-                    habilitado = !ocupado,
-                    onGuardar = { guardarDeuda() },
-                    onCancelar = {
-                        limpiarFormulario()
-                        mensaje = ""
-                        error = false
-                    }
-                )
+                SeccionAdmin.NUEVA -> if (puedeGestionar) {
+                    PanelFormulario(
+                        editandoId = deudaEditandoId,
+                        clientes = usuarios,
+                        usuarioSeleccionadoId = usuarioSeleccionadoId,
+                        onUsuario = { usuarioSeleccionadoId = it },
+                        concepto = concepto, onConcepto = { concepto = it },
+                        empresa = empresa, onEmpresa = { empresa = it },
+                        monto = monto, onMonto = { monto = it },
+                        vencimiento = vencimiento, onVencimiento = { vencimiento = it },
+                        habilitado = !ocupado,
+                        onGuardar = { guardarDeuda() },
+                        onCancelar = {
+                            limpiarFormulario()
+                            mensaje = ""
+                            error = false
+                        }
+                    )
+                } else {
+                    Text(
+                        text = "Tu rol es de solo lectura: no puedes crear ni editar deudas.",
+                        modifier = Modifier.padding(16.dp),
+                        color = colores.onBackground
+                    )
+                }
             }
         }
     }
@@ -545,6 +578,7 @@ fun AdminScreen(
 @Composable
 private fun PanelResumen(
     nombre: String,
+    puedeGestionar: Boolean,
     totalClientes: Int,
     totalPendientes: Int,
     totalVencidas: Int,
@@ -561,6 +595,15 @@ private fun PanelResumen(
     onCerrarSesion: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
+
+    val accesos = buildList {
+        if (puedeGestionar) add(Acceso("➕", "Nueva deuda", onNuevaDeuda))
+        add(Acceso("📄", "Ver deudas", onVerDeudas))
+        add(Acceso("⏰", "Deudas vencidas", onVerVencidas))
+        add(Acceso("👥", "Clientes", onVerClientes))
+        add(Acceso("🔄", "Actualizar datos", onActualizar))
+        add(Acceso("⚙️", "Configuración", onConfiguracion))
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -585,7 +628,10 @@ private fun PanelResumen(
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Text("Administra clientes y deudas desde un solo lugar.")
+                    Text(
+                        if (puedeGestionar) "Gestiona clientes y deudas desde un solo lugar."
+                        else "Consulta clientes, deudas y recaudación. Este perfil es de solo lectura."
+                    )
                 }
             }
         }
@@ -617,22 +663,17 @@ private fun PanelResumen(
             Text("Accesos rápidos", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
 
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BotonAcceso("➕", "Nueva deuda", onNuevaDeuda, Modifier.weight(1f), habilitado)
-                BotonAcceso("📄", "Ver deudas", onVerDeudas, Modifier.weight(1f), habilitado)
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BotonAcceso("⏰", "Deudas vencidas", onVerVencidas, Modifier.weight(1f), habilitado)
-                BotonAcceso("👥", "Clientes", onVerClientes, Modifier.weight(1f), habilitado)
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BotonAcceso("🔄", "Actualizar datos", onActualizar, Modifier.weight(1f), habilitado)
-                BotonAcceso("⚙️", "Configuración", onConfiguracion, Modifier.weight(1f), habilitado)
+        accesos.chunked(2).forEach { fila ->
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    fila.forEach { acceso ->
+                        BotonAcceso(
+                            acceso.icono, acceso.texto, acceso.onClick,
+                            Modifier.weight(1f), habilitado
+                        )
+                    }
+                    if (fila.size == 1) Spacer(Modifier.weight(1f))
+                }
             }
         }
 
@@ -720,6 +761,7 @@ private fun BotonAcceso(
 @Composable
 private fun PanelDeudas(
     deudas: List<Map<String, String>>,
+    puedeGestionar: Boolean,
     filtro: FiltroDeuda,
     onFiltro: (FiltroDeuda) -> Unit,
     busqueda: String,
@@ -742,6 +784,7 @@ private fun PanelDeudas(
                 onValueChange = onBusqueda,
                 label = { Text("Buscar por cliente, RUT, concepto o empresa") },
                 singleLine = true,
+                colors = EstilosCampo.colores(),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -851,25 +894,27 @@ private fun PanelDeudas(
                             fontSize = 13.sp
                         )
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BotonSecundario(
-                                texto = "Editar",
-                                onClick = { onEditar(deuda) },
-                                habilitado = habilitado,
-                                modifier = Modifier.weight(1f),
-                                altura = 42.dp
-                            )
-                            BotonSecundario(
-                                texto = "Eliminar",
-                                onClick = { onEliminar(deuda) },
-                                habilitado = habilitado,
-                                modifier = Modifier.weight(1f),
-                                colores = ButtonDefaults.outlinedButtonColors(contentColor = colores.error),
-                                altura = 42.dp
-                            )
+                        if (puedeGestionar) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                BotonSecundario(
+                                    texto = "Editar",
+                                    onClick = { onEditar(deuda) },
+                                    habilitado = habilitado,
+                                    modifier = Modifier.weight(1f),
+                                    altura = 42.dp
+                                )
+                                BotonSecundario(
+                                    texto = "Eliminar",
+                                    onClick = { onEliminar(deuda) },
+                                    habilitado = habilitado,
+                                    modifier = Modifier.weight(1f),
+                                    colores = ButtonDefaults.outlinedButtonColors(contentColor = colores.error),
+                                    altura = 42.dp
+                                )
+                            }
                         }
                     } else {
                         Text(
@@ -888,6 +933,7 @@ private fun PanelDeudas(
 private fun PanelClientes(
     clientes: List<Map<String, String>>,
     deudas: List<Map<String, String>>,
+    puedeGestionar: Boolean,
     formatoMoneda: NumberFormat,
     onNuevaDeudaPara: (String) -> Unit,
     onVerDeudasDe: (String) -> Unit
@@ -959,16 +1005,18 @@ private fun PanelClientes(
                             modifier = Modifier.weight(1f),
                             altura = 42.dp
                         )
-                        BotonPrincipal(
-                            texto = "Nueva deuda",
-                            onClick = { onNuevaDeudaPara(id) },
-                            modifier = Modifier.weight(1f),
-                            altura = 42.dp,
-                            colores = ButtonDefaults.buttonColors(
-                                containerColor = colores.secondary,
-                                contentColor = colores.onSecondary
+                        if (puedeGestionar) {
+                            BotonPrincipal(
+                                texto = "Nueva deuda",
+                                onClick = { onNuevaDeudaPara(id) },
+                                modifier = Modifier.weight(1f),
+                                altura = 42.dp,
+                                colores = ButtonDefaults.buttonColors(
+                                    containerColor = colores.secondary,
+                                    contentColor = colores.onSecondary
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -1047,13 +1095,10 @@ private fun PanelFormulario(
                         teclado = KeyboardType.Decimal,
                         ayuda = "Sin separadores de miles. Ejemplo: 45000"
                     )
-                    CampoAdmin(
+                    SelectorFechaVencimiento(
                         valor = vencimiento,
                         onCambia = onVencimiento,
-                        etiqueta = "Fecha de vencimiento",
-                        habilitado = habilitado,
-                        placeholder = "2026-11-30",
-                        ayuda = "Formato AAAA-MM-DD. Debe ser una fecha real."
+                        habilitado = habilitado
                     )
 
                     BotonPrincipal(
@@ -1102,8 +1147,103 @@ private fun CampoAdmin(
         ayuda = ayuda,
         placeholder = placeholder,
         forma = OutlinedTextFieldDefaults.shape,
-        colores = OutlinedTextFieldDefaults.colors(),
+        colores = EstilosCampo.colores(),
         accionTeclado = ImeAction.Default,
         reservarEspacioAyuda = false
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SelectorFechaVencimiento(
+    valor: String,
+    onCambia: (String) -> Unit,
+    habilitado: Boolean
+) {
+    val colores = MaterialTheme.colorScheme
+    var mostrarCalendario by remember { mutableStateOf(false) }
+
+    val formato = remember {
+        SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+            isLenient = false
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+    }
+
+    val millisInicial = remember(valor) {
+        try {
+            if (valor.isNotBlank()) formato.parse(valor)?.time else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = millisInicial,
+        yearRange = IntRange(
+            Calendar.getInstance().get(Calendar.YEAR),
+            Calendar.getInstance().get(Calendar.YEAR) + 10
+        )
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(
+            value = valor.ifBlank { "Sin fecha seleccionada" },
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            enabled = false,
+            readOnly = true,
+            label = { Text("Fecha de vencimiento") },
+            trailingIcon = {
+                Text("📅", modifier = Modifier.padding(end = 8.dp))
+            },
+            supportingText = {
+                Text(
+                    text = "Usa el botón de abajo para elegir en el calendario",
+                    color = colores.onSurfaceVariant
+                )
+            },
+            shape = OutlinedTextFieldDefaults.shape,
+            colors = EstilosCampo.colores(),
+            singleLine = true
+        )
+
+        OutlinedButton(
+            onClick = { mostrarCalendario = true },
+            enabled = habilitado,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = if (valor.isBlank()) "📅  Abrir calendario" else "📅  Cambiar fecha",
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+
+    if (mostrarCalendario) {
+        DatePickerDialog(
+            onDismissRequest = { mostrarCalendario = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = datePickerState.selectedDateMillis
+                        if (millis != null) {
+                            onCambia(formato.format(Date(millis)))
+                        }
+                        mostrarCalendario = false
+                    }
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarCalendario = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 }

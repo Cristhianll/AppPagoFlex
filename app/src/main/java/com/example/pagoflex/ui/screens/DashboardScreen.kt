@@ -3,21 +3,21 @@ package com.example.pagoflex.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pagoflex.validation.ValidacionesDeuda
+import com.example.pagoflex.data.PagoFlexRepository
+import com.example.pagoflex.ui.components.AvatarUsuario
 import com.example.pagoflex.ui.components.BarraNavegacionPagoFlex
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.MarcaHorizontalPagoFlex
 import com.example.pagoflex.ui.components.SeccionPagoFlex
 import com.example.pagoflex.ui.components.TarjetaSeccion
+import com.example.pagoflex.validation.ValidacionesDeuda
 import java.text.NumberFormat
 import java.util.Calendar
 import java.util.Locale
@@ -25,6 +25,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    usuarioId: Int,
+    repository: PagoFlexRepository,
     nombreUsuario: String,
     deudasPendientes: List<Map<String, String>>,
     onPagarDeuda: (String) -> Unit,
@@ -96,24 +98,12 @@ fun DashboardScreen(
                                 menuExpandido = true
                             }
                         ) {
-                            Surface(
-                                modifier = Modifier.size(36.dp),
-                                shape = CircleShape,
-                                color = colores.secondary,
-                                contentColor = colores.onSecondary
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = nombreUsuario
-                                            .take(1)
-                                            .uppercase()
-                                            .ifBlank { "U" },
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
+                            AvatarUsuario(
+                                usuarioId = usuarioId,
+                                nombre = nombreUsuario,
+                                repository = repository,
+                                tamano = 36.dp
+                            )
                         }
 
                         DropdownMenu(
@@ -125,6 +115,7 @@ fun DashboardScreen(
                             listOf(
                                 "cuenta" to "Mi cuenta y datos",
                                 "editar" to "Editar mis datos",
+                                "clave" to "Cambiar contraseña",
                                 "tarjetas" to "Mis tarjetas",
                                 "configuracion" to "Configuración",
                                 "salir" to "Cerrar sesión"

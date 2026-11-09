@@ -14,7 +14,7 @@ import com.example.pagoflex.validation.ValidacionesDeuda
 import com.example.pagoflex.validation.ValidacionesTarjeta
 
 class PagoFlexDbHelper(context: Context) :
-    SQLiteOpenHelper(context, "pagoflex.db", null, 3) {
+    SQLiteOpenHelper(context, "pagoflex.db", null, 4) {
 
     companion object {
         const val MAX_TARJETAS = 4
@@ -22,9 +22,9 @@ class PagoFlexDbHelper(context: Context) :
         private const val RESPUESTA_DEMO_2 = "maria"
     }
 
-    override fun onConfigure(db: SQLiteDatabase) {
-        super.onConfigure(db)
-        db.setForeignKeyConstraintsEnabled(true)
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        if (!db.isReadOnly) db.setForeignKeyConstraintsEnabled(true)
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -36,7 +36,7 @@ class PagoFlexDbHelper(context: Context) :
                 rut TEXT NOT NULL DEFAULT '',
                 correo TEXT NOT NULL UNIQUE,
                 clave_hash TEXT NOT NULL,
-                rol TEXT NOT NULL CHECK(rol IN ('ADMIN','USUARIO')),
+                rol TEXT NOT NULL CHECK(rol IN ('ADMIN','GESTOR','USUARIO')),
                 pregunta1 TEXT NOT NULL DEFAULT '',
                 respuesta1_hash TEXT NOT NULL DEFAULT '',
                 pregunta2 TEXT NOT NULL DEFAULT '',
@@ -82,6 +82,12 @@ class PagoFlexDbHelper(context: Context) :
             PreguntasSecretas.lista[0], RESPUESTA_DEMO_1,
             PreguntasSecretas.lista[1], RESPUESTA_DEMO_2
         )
+        insertarUsuario(
+            db, "Gestor de Deudas", "13579246-2", "gestor@pagoflex.cl",
+            "Gestor123$", "GESTOR",
+            PreguntasSecretas.lista[0], RESPUESTA_DEMO_1,
+            PreguntasSecretas.lista[1], RESPUESTA_DEMO_2
+        )
 
         val emiliaId = insertarUsuario(
             db, "Emilia Demo", "12345678-5", "emilia@pagoflex.cl",
@@ -116,6 +122,45 @@ class PagoFlexDbHelper(context: Context) :
 
             completarCuentaDemo(db, "admin@pagoflex.cl", "11111111-1")
             completarCuentaDemo(db, "emilia@pagoflex.cl", "12345678-5")
+        }
+
+        if (oldVersion < 4) {
+            db.execSQL(
+                """
+                CREATE TABLE usuarios_nueva (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT NOT NULL,
+                    rut TEXT NOT NULL DEFAULT '',
+                    correo TEXT NOT NULL UNIQUE,
+                    clave_hash TEXT NOT NULL,
+                    rol TEXT NOT NULL CHECK(rol IN ('ADMIN','GESTOR','USUARIO')),
+                    pregunta1 TEXT NOT NULL DEFAULT '',
+                    respuesta1_hash TEXT NOT NULL DEFAULT '',
+                    pregunta2 TEXT NOT NULL DEFAULT '',
+                    respuesta2_hash TEXT NOT NULL DEFAULT '',
+                    foto BLOB
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                INSERT INTO usuarios_nueva
+                    (id, nombre, rut, correo, clave_hash, rol,
+                     pregunta1, respuesta1_hash, pregunta2, respuesta2_hash, foto)
+                SELECT id, nombre, rut, correo, clave_hash, rol,
+                       pregunta1, respuesta1_hash, pregunta2, respuesta2_hash, foto
+                FROM usuarios
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE usuarios")
+            db.execSQL("ALTER TABLE usuarios_nueva RENAME TO usuarios")
+
+            insertarUsuario(
+                db, "Gestor de Deudas", "13579246-2", "gestor@pagoflex.cl",
+                "Gestor123$", "GESTOR",
+                PreguntasSecretas.lista[0], RESPUESTA_DEMO_1,
+                PreguntasSecretas.lista[1], RESPUESTA_DEMO_2
+            )
         }
     }
 
@@ -287,52 +332,69 @@ class PagoFlexDbHelper(context: Context) :
         usuarioId: Int,
         nombre: String,
         rut: String,
-        correo: String,
-        pregunta1: String,
-        respuesta1: String,
-        pregunta2: String,
-        respuesta2: String
-    ): String? {
-        if (usuarioId <= 0) return "Usuario inválido."
+        correo: String
+    ): Map<String, String> {
+        if (usuarioId <= 0) return mapOf("general" to "Usuario inválido.")
 
-        val cambiaPreguntas = pregunta1.isNotBlank() || pregunta2.isNotBlank() ||
-                respuesta1.isNotBlank() || respuesta2.isNotBlank()
-
-        val problema = ValidacionesCuenta.nombre(nombre)
-            ?: ValidacionesCuenta.rut(rut)
-            ?: ValidacionesCuenta.correo(correo)
-            ?: if (cambiaPreguntas) {
-                ValidacionesCuenta.preguntas(pregunta1, respuesta1, pregunta2, respuesta2)
-            } else null
-        if (problema != null) return problema
+        val errores = mutableMapOf<String, String>()
+        ValidacionesCuenta.nombre(nombre)?.let { errores["nombre"] = it }
+        ValidacionesCuenta.rut(rut)?.let { errores["rut"] = it }
+        ValidacionesCuenta.correo(correo)?.let { errores["correo"] = it }
+        if (errores.isNotEmpty()) return errores
 
         val db = writableDatabase
         val correoNorm = correo.trim().lowercase(Locale.ROOT)
         val rutNorm = ValidacionesRut.normalizar(rut)
 
         if (existeValor(db, "correo", correoNorm, usuarioId)) {
-            return "Ese correo ya pertenece a otro usuario."
+            errores["correo"] = "Ese correo ya está registrado por otro usuario."
         }
         if (existeValor(db, "rut", rutNorm, usuarioId)) {
-            return "Ese RUT ya pertenece a otro usuario."
+            errores["rut"] = "Ese RUT ya está registrado por otro usuario."
         }
+        if (errores.isNotEmpty()) return errores
 
         val valores = ContentValues().apply {
             put("nombre", nombre.trim())
             put("rut", rutNorm)
             put("correo", correoNorm)
-            if (cambiaPreguntas) {
-                put("pregunta1", pregunta1.trim())
-                put("respuesta1_hash", hash(PreguntasSecretas.normalizarRespuesta(respuesta1)))
-                put("pregunta2", pregunta2.trim())
-                put("respuesta2_hash", hash(PreguntasSecretas.normalizarRespuesta(respuesta2)))
-            }
         }
-
         val filas = db.update("usuarios", valores, "id = ?", arrayOf(usuarioId.toString()))
-        return if (filas == 1) null else "No se pudo actualizar el perfil."
+        return if (filas == 1) emptyMap() else mapOf("general" to "No se pudo actualizar el perfil.")
     }
 
+    fun cambiarClave(
+        usuarioId: Int,
+        claveActual: String,
+        claveNueva: String
+    ): Map<String, String> {
+        if (usuarioId <= 0) return mapOf("general" to "Usuario inválido.")
+
+        var hashGuardado: String? = null
+        readableDatabase.rawQuery(
+            "SELECT clave_hash FROM usuarios WHERE id = ?",
+            arrayOf(usuarioId.toString())
+        ).use { if (it.moveToFirst()) hashGuardado = it.getString(0) }
+
+        val guardado = hashGuardado ?: return mapOf("general" to "No se encontró la cuenta.")
+
+        if (guardado != hash(claveActual)) {
+            return mapOf("actual" to "La contraseña actual es incorrecta.")
+        }
+        ValidacionesCuenta.contrasena(claveNueva)?.let { return mapOf("nueva" to it) }
+        if (hash(claveNueva) == guardado) {
+            return mapOf("nueva" to "La nueva contraseña debe ser distinta a la actual.")
+        }
+
+        val valores = ContentValues().apply { put("clave_hash", hash(claveNueva)) }
+        val filas = writableDatabase.update(
+            "usuarios", valores, "id = ?", arrayOf(usuarioId.toString())
+        )
+        return if (filas == 1) emptyMap() else mapOf("general" to "No se pudo actualizar la contraseña.")
+    }
+
+    fun existeCorreo(correo: String): Boolean =
+        existeValor(readableDatabase, "correo", correo.trim().lowercase(Locale.ROOT))
 
 
     fun guardarFoto(usuarioId: Int, jpg: ByteArray): Boolean {
