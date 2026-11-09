@@ -70,25 +70,31 @@ class PagoFlexRepository(context: Context) {
         )
     }
 
+    // Ahora coincide con el DbHelper
     fun actualizarPerfil(
         usuarioId: Int,
         nombre: String,
         rut: String,
-        correo: String,
-        pregunta1: String = "",
-        respuesta1: String = "",
-        pregunta2: String = "",
-        respuesta2: String = ""
-    ): String? {
+        correo: String
+    ): Map<String, String> {
         return db.actualizarPerfil(
             usuarioId,
             nombre,
             rut,
-            correo,
-            pregunta1,
-            respuesta1,
-            pregunta2,
-            respuesta2
+            correo
+        )
+    }
+
+
+    fun cambiarClave(
+        usuarioId: Int,
+        claveActual: String,
+        claveNueva: String
+    ): Map<String, String> {
+        return db.cambiarClave(
+            usuarioId,
+            claveActual,
+            claveNueva
         )
     }
 
@@ -101,6 +107,9 @@ class PagoFlexRepository(context: Context) {
 
     fun obtenerFoto(usuarioId: Int): ByteArray? {
         return db.obtenerFoto(usuarioId)
+    }
+    fun existeCorreo(correo: String): Boolean {
+        return db.existeCorreo(correo)
     }
 
     fun listarTarjetasUsuario(

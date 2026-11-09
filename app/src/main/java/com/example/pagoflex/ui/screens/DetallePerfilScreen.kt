@@ -15,18 +15,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.PagoFlexRepository
-import com.example.pagoflex.validation.PreguntasSecretas
-
-import com.example.pagoflex.validation.ValidacionesRut
-import com.example.pagoflex.validation.ValidacionesTarjeta
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
+import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.CampoTexto
 import com.example.pagoflex.ui.components.FotoPerfilEditable
 import com.example.pagoflex.ui.components.InterruptorConTexto
-import com.example.pagoflex.ui.components.SelectorDesplegable
 import com.example.pagoflex.ui.components.TarjetaSeccion
+import com.example.pagoflex.ui.styles.EstilosCampo
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
+import com.example.pagoflex.validation.ValidacionesCuenta
+import com.example.pagoflex.validation.ValidacionesRut
+import com.example.pagoflex.validation.ValidacionesTarjeta
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -127,6 +127,7 @@ fun DetallePerfilScreen(
             ) {
                 BotonPestanaPerfil("Cuenta", pestana == "cuenta") { pestana = "cuenta" }
                 BotonPestanaPerfil("Editar datos", pestana == "editar") { pestana = "editar" }
+                BotonPestanaPerfil("Contraseña", pestana == "clave") { pestana = "clave" }
                 BotonPestanaPerfil("Tarjetas", pestana == "tarjetas") { pestana = "tarjetas" }
                 BotonPestanaPerfil("Ajustes", pestana == "configuracion") { pestana = "configuracion" }
             }
@@ -138,6 +139,11 @@ fun DetallePerfilScreen(
                     repository = repository,
                     usuario = usuario,
                     onUsuarioActualizado = onUsuarioActualizado
+                )
+
+                "clave" -> ContenidoCambiarClave(
+                    repository = repository,
+                    usuarioId = usuarioId
                 )
 
                 "tarjetas" -> ContenidoMisTarjetas(
@@ -221,7 +227,6 @@ fun ContenidoMiCuenta(
     }
 }
 
-
 @Composable
 private fun ContenidoEditarDatos(
     repository: PagoFlexRepository,
@@ -237,12 +242,12 @@ private fun ContenidoEditarDatos(
         mutableStateOf(ValidacionesRut.formatear(usuario["rut"].orEmpty()))
     }
     var correo by remember(usuarioId) { mutableStateOf(usuario["correo"].orEmpty()) }
-    var pregunta1 by remember { mutableStateOf("") }
-    var respuesta1 by remember { mutableStateOf("") }
-    var pregunta2 by remember { mutableStateOf("") }
-    var respuesta2 by remember { mutableStateOf("") }
-    var mensaje by remember { mutableStateOf("") }
-    var esError by remember { mutableStateOf(false) }
+
+    var errorNombre by remember { mutableStateOf<String?>(null) }
+    var errorRut by remember { mutableStateOf<String?>(null) }
+    var errorCorreo by remember { mutableStateOf<String?>(null) }
+    var errorGeneral by remember { mutableStateOf<String?>(null) }
+    var exito by remember { mutableStateOf("") }
     var guardando by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -253,93 +258,221 @@ private fun ContenidoEditarDatos(
             fontWeight = FontWeight.Bold
         )
 
-        CampoEditar(nombre, { nombre = it; mensaje = "" }, "Nombre completo", !guardando)
+        CampoEditar(
+            valor = nombre,
+            onCambia = { nombre = it; errorNombre = null; exito = ""; errorGeneral = null },
+            etiqueta = "Nombre completo",
+            habilitado = !guardando,
+            error = errorNombre
+        )
         CampoEditar(
             valor = rut,
             onCambia = {
                 rut = it.filter { c -> c.isDigit() || c in ".-kK" }.take(12)
-                mensaje = ""
+                errorRut = null; exito = ""; errorGeneral = null
             },
             etiqueta = "RUT",
             habilitado = !guardando,
-            ayuda = "Ejemplo: 12.345.678-5"
+            ayuda = "Ejemplo: 12.345.678-5",
+            error = errorRut
         )
         CampoEditar(
-            correo, { correo = it; mensaje = "" }, "Correo electrónico",
-            !guardando, KeyboardType.Email
+            valor = correo,
+            onCambia = { correo = it; errorCorreo = null; exito = ""; errorGeneral = null },
+            etiqueta = "Correo electrónico",
+            habilitado = !guardando,
+            teclado = KeyboardType.Email,
+            error = errorCorreo
         )
 
-        Text(
-            text = "PREGUNTAS SECRETAS (OPCIONAL)",
-            color = colores.onSurfaceVariant,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Déjalas vacías para conservar las actuales. Si las completas, " +
-                    "reemplazan a las anteriores.",
-            color = colores.onSurfaceVariant,
-            fontSize = 12.sp
-        )
-
-        SelectorDesplegable(
-            etiqueta = "Pregunta secreta 1",
-            textoSeleccionado = pregunta1,
-            opciones = PreguntasSecretas.lista,
-            onSeleccion = { pregunta1 = PreguntasSecretas.lista[it]; mensaje = "" },
-            habilitado = !guardando
-        )
-        CampoEditar(respuesta1, { respuesta1 = it; mensaje = "" }, "Respuesta 1", !guardando)
-
-        SelectorDesplegable(
-            etiqueta = "Pregunta secreta 2",
-            textoSeleccionado = pregunta2,
-            opciones = PreguntasSecretas.lista,
-            onSeleccion = { pregunta2 = PreguntasSecretas.lista[it]; mensaje = "" },
-            habilitado = !guardando
-        )
-        CampoEditar(respuesta2, { respuesta2 = it; mensaje = "" }, "Respuesta 2", !guardando)
-
-        if (mensaje.isNotBlank()) {
-            Text(
-                text = mensaje,
-                color = if (esError) colores.error else colores.primary,
-                fontWeight = FontWeight.Medium
-            )
+        errorGeneral?.let {
+            Text(text = it, color = colores.error, fontWeight = FontWeight.Medium)
+        }
+        if (exito.isNotBlank()) {
+            Text(text = exito, color = colores.primary, fontWeight = FontWeight.Medium)
         }
 
         BotonPrincipal(
             texto = if (guardando) "Guardando..." else "Guardar cambios",
             habilitado = !guardando,
             onClick = {
-                scope.launch {
-                    guardando = true
-                    val error = try {
-                        withContext(Dispatchers.IO) {
-                            repository.actualizarPerfil(
-                                usuarioId, nombre, rut, correo,
-                                pregunta1, respuesta1, pregunta2, respuesta2
-                            )
-                        }
-                    } catch (_: Exception) {
-                        "No se pudo guardar. Intenta nuevamente."
-                    }
-                    guardando = false
+                val eNombre = ValidacionesCuenta.nombre(nombre)
+                val eRut = ValidacionesCuenta.rut(rut)
+                val eCorreo = ValidacionesCuenta.correo(correo)
+                errorNombre = eNombre
+                errorRut = eRut
+                errorCorreo = eCorreo
 
-                    if (error == null) {
-                        esError = false
-                        mensaje = "Datos actualizados correctamente."
-                        pregunta1 = ""; respuesta1 = ""; pregunta2 = ""; respuesta2 = ""
-                        onUsuarioActualizado(
-                            usuario + mapOf(
-                                "nombre" to nombre.trim(),
-                                "rut" to ValidacionesRut.normalizar(rut),
-                                "correo" to correo.trim().lowercase()
+                if (eNombre == null && eRut == null && eCorreo == null) {
+                    scope.launch {
+                        guardando = true
+                        exito = ""
+                        errorGeneral = null
+                        val errores = try {
+                            withContext(Dispatchers.IO) {
+                                repository.actualizarPerfil(usuarioId, nombre, rut, correo)
+                            }
+                        } catch (_: Exception) {
+                            mapOf("general" to "No se pudo guardar. Intenta nuevamente.")
+                        }
+                        guardando = false
+
+                        if (errores.isEmpty()) {
+                            exito = "Datos actualizados correctamente."
+                            onUsuarioActualizado(
+                                usuario + mapOf(
+                                    "nombre" to nombre.trim(),
+                                    "rut" to ValidacionesRut.normalizar(rut),
+                                    "correo" to correo.trim().lowercase()
+                                )
                             )
-                        )
-                    } else {
-                        esError = true
-                        mensaje = error
+                        } else {
+                            errorNombre = errores["nombre"]
+                            errorRut = errores["rut"]
+                            errorCorreo = errores["correo"]
+                            errorGeneral = errores["general"]
+                        }
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            altura = 48.dp,
+            forma = RoundedCornerShape(12.dp),
+            colores = ButtonDefaults.buttonColors(
+                containerColor = colores.secondary,
+                contentColor = colores.onSecondary
+            ),
+            elevacion = ButtonDefaults.buttonElevation(),
+            relleno = ButtonDefaults.ContentPadding,
+            pesoTexto = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun ContenidoCambiarClave(
+    repository: PagoFlexRepository,
+    usuarioId: Int
+) {
+    val colores = MaterialTheme.colorScheme
+    val scope = rememberCoroutineScope()
+
+    var actual by remember { mutableStateOf("") }
+    var nueva by remember { mutableStateOf("") }
+    var repetir by remember { mutableStateOf("") }
+    var verActual by remember { mutableStateOf(false) }
+    var verNueva by remember { mutableStateOf(false) }
+    var verRepetir by remember { mutableStateOf(false) }
+
+    var errorActual by remember { mutableStateOf<String?>(null) }
+    var errorNueva by remember { mutableStateOf<String?>(null) }
+    var errorRepetir by remember { mutableStateOf<String?>(null) }
+    var errorGeneral by remember { mutableStateOf<String?>(null) }
+    var exito by remember { mutableStateOf("") }
+    var guardando by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "CAMBIAR CONTRASEÑA",
+            color = colores.onSurfaceVariant,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Por seguridad, confirma tu contraseña actual antes de crear una nueva.",
+            color = colores.onSurfaceVariant,
+            fontSize = 12.sp
+        )
+
+        CampoContrasena(
+            valor = actual,
+            onValorCambia = { actual = it; errorActual = null; exito = ""; errorGeneral = null },
+            etiqueta = "Contraseña actual",
+            visible = verActual,
+            onAlternarVisible = { verActual = !verActual },
+            modifier = Modifier.fillMaxWidth(),
+            error = errorActual,
+            habilitado = !guardando,
+            mostrarCandado = false,
+            usarTextoVisibilidad = true,
+            forma = EstilosCampo.forma,
+            reservarEspacioError = false
+        )
+        CampoContrasena(
+            valor = nueva,
+            onValorCambia = { nueva = it; errorNueva = null; exito = ""; errorGeneral = null },
+            etiqueta = "Nueva contraseña",
+            visible = verNueva,
+            onAlternarVisible = { verNueva = !verNueva },
+            modifier = Modifier.fillMaxWidth(),
+            error = errorNueva,
+            habilitado = !guardando,
+            mostrarCandado = false,
+            usarTextoVisibilidad = true,
+            forma = EstilosCampo.forma,
+            reservarEspacioError = false
+        )
+        Text(
+            text = "Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.",
+            color = colores.onSurfaceVariant,
+            fontSize = 12.sp
+        )
+        CampoContrasena(
+            valor = repetir,
+            onValorCambia = { repetir = it; errorRepetir = null; exito = ""; errorGeneral = null },
+            etiqueta = "Confirmar nueva contraseña",
+            visible = verRepetir,
+            onAlternarVisible = { verRepetir = !verRepetir },
+            modifier = Modifier.fillMaxWidth(),
+            error = errorRepetir,
+            habilitado = !guardando,
+            mostrarCandado = false,
+            usarTextoVisibilidad = true,
+            forma = EstilosCampo.forma,
+            reservarEspacioError = false
+        )
+
+        errorGeneral?.let {
+            Text(text = it, color = colores.error, fontWeight = FontWeight.Medium)
+        }
+        if (exito.isNotBlank()) {
+            Text(text = exito, color = colores.primary, fontWeight = FontWeight.Medium)
+        }
+
+        BotonPrincipal(
+            texto = if (guardando) "Guardando..." else "Actualizar contraseña",
+            habilitado = !guardando,
+            onClick = {
+                val eActual = if (actual.isEmpty()) "Ingresa tu contraseña actual" else null
+                val eNueva = ValidacionesCuenta.contrasena(nueva)
+                    ?: if (nueva == actual) "La nueva contraseña debe ser distinta a la actual" else null
+                val eRepetir = ValidacionesCuenta.repetir(nueva, repetir)
+                errorActual = eActual
+                errorNueva = eNueva
+                errorRepetir = eRepetir
+
+                if (eActual == null && eNueva == null && eRepetir == null) {
+                    scope.launch {
+                        guardando = true
+                        exito = ""
+                        errorGeneral = null
+                        val errores = try {
+                            withContext(Dispatchers.IO) {
+                                repository.cambiarClave(usuarioId, actual, nueva)
+                            }
+                        } catch (_: Exception) {
+                            mapOf("general" to "No se pudo cambiar la contraseña. Intenta nuevamente.")
+                        }
+                        guardando = false
+
+                        if (errores.isEmpty()) {
+                            exito = "Contraseña actualizada correctamente."
+                            actual = ""; nueva = ""; repetir = ""
+                        } else {
+                            errorActual = errores["actual"]
+                            errorNueva = errores["nueva"]
+                            errorGeneral = errores["general"]
+                        }
                     }
                 }
             },
@@ -364,7 +497,8 @@ private fun CampoEditar(
     etiqueta: String,
     habilitado: Boolean,
     teclado: KeyboardType = KeyboardType.Text,
-    ayuda: String? = null
+    ayuda: String? = null,
+    error: String? = null
 ) {
     CampoTexto(
         valor = valor,
@@ -374,9 +508,8 @@ private fun CampoEditar(
         habilitado = habilitado,
         tipoTeclado = teclado,
         ayuda = ayuda,
-        forma = OutlinedTextFieldDefaults.shape,
-        colores = OutlinedTextFieldDefaults.colors(),
-        accionTeclado = ImeAction.Default,
+        error = error,
+        accionTeclado = ImeAction.Next,
         reservarEspacioAyuda = false
     )
 }

@@ -7,10 +7,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.example.pagoflex.data.PagoFlexRepository
-import com.example.pagoflex.validation.ValidacionesTarjeta
 import com.example.pagoflex.ui.components.CargaPagoFlex
 import com.example.pagoflex.ui.components.MensajePagoFlex
 import com.example.pagoflex.ui.screens.*
+import com.example.pagoflex.validation.ValidacionesTarjeta
 import com.example.pagoflex.viewmodel.FormularioViewModel
 import com.example.pagoflex.viewmodel.PagoViewModel
 import kotlinx.coroutines.CancellationException
@@ -26,7 +26,6 @@ fun PagoFlexApp(
 ) {
     val scope = rememberCoroutineScope()
     val colores = MaterialTheme.colorScheme
-
     val formularioState by formularioViewModel.uiState.collectAsState()
     val pagoState by pagoViewModel.uiState.collectAsState()
 
@@ -39,6 +38,7 @@ fun PagoFlexApp(
     var correo by remember { mutableStateOf("") }
     var clave by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf("") }
+    var mensajeExito by remember { mutableStateOf(false) }
 
     var ocupado by remember { mutableStateOf(false) }
     var cargandoDatos by remember { mutableStateOf(false) }
@@ -103,6 +103,7 @@ fun PagoFlexApp(
         correo = ""
         clave = ""
         mensaje = ""
+        mensajeExito = false
 
         deudas = emptyList()
         pagos = emptyList()
@@ -122,7 +123,6 @@ fun PagoFlexApp(
 
         scope.launch {
             cargandoDatos = true
-
             try {
                 cargarDatos(id)
             } catch (c: CancellationException) {
@@ -137,13 +137,11 @@ fun PagoFlexApp(
 
     fun recargarTarjetas() {
         val id = usuarioId ?: return
-
         scope.launch {
             try {
                 val lista = withContext(Dispatchers.IO) {
                     repository.listarTarjetasUsuario(id)
                 }
-
                 if (sesion?.get("id")?.toIntOrNull() == id) {
                     tarjetas = lista
                 }
@@ -211,7 +209,6 @@ fun PagoFlexApp(
 
         scope.launch {
             ocupado = true
-
             try {
                 val pagada = withContext(Dispatchers.IO) {
                     repository.pagarDeuda(
@@ -243,7 +240,6 @@ fun PagoFlexApp(
 
                     try {
                         cargarDatos(idUsuario)
-
                         pagos.firstOrNull {
                             it["deudaId"] == idDeuda.toString()
                         }?.let {
@@ -260,7 +256,6 @@ fun PagoFlexApp(
                         "No se pudo registrar el pago. Actualiza las deudas."
                     pantalla = "pagos"
                     deudaSeleccionadaId = null
-
                     try {
                         cargarDatos(idUsuario)
                     } catch (c: CancellationException) {
@@ -282,10 +277,8 @@ fun PagoFlexApp(
 
     LaunchedEffect(usuarioId, rol) {
         val id = usuarioId
-
         if (id != null && rol == "USUARIO") {
             cargandoDatos = true
-
             try {
                 cargarDatos(id)
             } catch (c: CancellationException) {
@@ -301,10 +294,8 @@ fun PagoFlexApp(
     LaunchedEffect(formularioState.registroExitoso, modo) {
         if (modo == "registro" && formularioState.registroExitoso) {
             ocupado = true
-
             try {
                 val datos = formularioState
-
                 val error = withContext(Dispatchers.IO) {
                     repository.registrarUsuario(
                         nombre = datos.nombre,
@@ -319,9 +310,10 @@ fun PagoFlexApp(
                 }
 
                 if (error == null) {
-                    correo = datos.correo.trim()
+                    correo = ""
                     clave = ""
-                    mensaje = "Cuenta creada. Ahora inicia sesión."
+                    mensajeExito = true
+                    mensaje = "Cuenta creada correctamente. Ahora inicia sesión."
                     formularioViewModel.onLimpiar()
                     modo = "login"
                 } else {
@@ -339,39 +331,23 @@ fun PagoFlexApp(
         }
     }
 
-    val pendientes = deudas.filter {
-        it["estado"] == "PENDIENTE"
-    }
+    val pendientes = deudas.filter { it["estado"] == "PENDIENTE" }
 
     val deudaSeleccionada = pendientes.firstOrNull {
         it["id"] == deudaSeleccionadaId
     }
 
     BackHandler(
-        enabled = sesion != null &&
-                rol != "ADMIN" &&
-                !ocupado &&
-                (verPerfil || pantalla != "inicio")
+        enabled = sesion != null && !ocupado && (verPerfil || pantalla != "inicio")
     ) {
         when {
-            verPerfil -> {
-                verPerfil = false
-            }
-
+            verPerfil -> verPerfil = false
             pantalla == "detallePago" -> {
                 pantalla = "pagos"
                 deudaSeleccionadaId = null
             }
-
-            else -> {
-                irAInicio()
-            }
+            else -> irAInicio()
         }
-    }
-
-    BackHandler(
-        enabled = ocupado && pantalla == "detallePago"
-    ) {
     }
 
     when {
@@ -390,12 +366,11 @@ fun PagoFlexApp(
             RecuperarCuentaScreen(
                 repository = repository,
                 correoInicial = correo,
-                onVolver = {
-                    modo = "login"
-                },
-                onFinalizado = { correoActualizado ->
-                    correo = correoActualizado
+                onVolver = { modo = "login" },
+                onFinalizado = { _ ->
+                    correo = ""
                     clave = ""
+                    mensajeExito = true
                     mensaje = "Contraseña actualizada. Ahora inicia sesión."
                     modo = "login"
                 }
@@ -407,20 +382,19 @@ fun PagoFlexApp(
                 correo = correo,
                 clave = clave,
                 mensaje = mensaje,
+                mensajeExito = mensajeExito,
                 ocupado = ocupado,
-                onCorreo = {
-                    correo = it
-                },
-                onClave = {
-                    clave = it
-                },
+                onCorreo = { correo = it },
+                onClave = { clave = it },
                 onRegistro = {
                     mensaje = ""
+                    mensajeExito = false
                     formularioViewModel.onLimpiar()
                     modo = "registro"
                 },
                 onRecuperar = {
                     mensaje = ""
+                    mensajeExito = false
                     modo = "recuperar"
                 },
                 onEntrar = {
@@ -430,7 +404,6 @@ fun PagoFlexApp(
 
                         scope.launch {
                             ocupado = true
-
                             try {
                                 val resultado = withContext(Dispatchers.IO) {
                                     repository.iniciarSesion(
@@ -439,11 +412,18 @@ fun PagoFlexApp(
                                     )
                                 }
 
-                                val idSesion =
-                                    resultado?.get("id")?.toIntOrNull()
+                                val idSesion = resultado?.get("id")?.toIntOrNull()
 
                                 if (resultado == null || idSesion == null) {
-                                    mensaje = "Correo o contraseña incorrectos."
+                                    mensajeExito = false
+                                    val existe = withContext(Dispatchers.IO) {
+                                        repository.existeCorreo(correoIngresado)
+                                    }
+                                    mensaje = if (existe) {
+                                        "La contraseña es incorrecta. Revísala e inténtalo de nuevo."
+                                    } else {
+                                        "No existe una cuenta registrada con ese correo."
+                                    }
                                 } else {
                                     pagoViewModel.cargarUsuario(idSesion)
 
@@ -458,6 +438,7 @@ fun PagoFlexApp(
                                     seccionPerfil = "cuenta"
                                     pantalla = "inicio"
                                     mensaje = ""
+                                    mensajeExito = false
                                     clave = ""
 
                                     sesion = resultado
@@ -465,6 +446,7 @@ fun PagoFlexApp(
                             } catch (c: CancellationException) {
                                 throw c
                             } catch (_: Exception) {
+                                mensajeExito = false
                                 mensaje = "No se pudo iniciar sesión."
                             } finally {
                                 ocupado = false
@@ -475,13 +457,11 @@ fun PagoFlexApp(
             )
         }
 
-        rol == "ADMIN" -> {
+        rol == "ADMIN" || rol == "GESTOR" -> {
             AdminScreen(
                 repository = repository,
                 usuario = sesion.orEmpty(),
-                onCerrarSesion = {
-                    cerrarSesion()
-                }
+                onCerrarSesion = { cerrarSesion() }
             )
         }
 
@@ -495,17 +475,11 @@ fun PagoFlexApp(
                     tarjetas = tarjetas,
                     notificacionesActivas = pagoState.notificacionesActivas,
                     seccionInicial = seccionPerfil,
-                    onVolver = {
-                        verPerfil = false
-                    },
-                    onCerrarSesion = {
-                        cerrarSesion()
-                    },
-                    onTarjetasCambiaron = {
-                        recargarTarjetas()
-                    },
-                    onUsuarioActualizado = {
-                        sesion = it
+                    onVolver = { verPerfil = false },
+                    onCerrarSesion = { cerrarSesion() },
+                    onTarjetasCambiaron = { recargarTarjetas() },
+                    onUsuarioActualizado = { actualizado ->
+                        sesion = actualizado
                     },
                     onAlternarNotificaciones = {
                         pagoViewModel.alternarNotificaciones()
@@ -520,9 +494,7 @@ fun PagoFlexApp(
                     if (mensaje.isNotBlank()) {
                         MensajePagoFlex(
                             texto = mensaje,
-                            onCerrar = {
-                                mensaje = ""
-                            }
+                            onCerrar = { mensaje = "" }
                         )
                     }
 
@@ -536,18 +508,10 @@ fun PagoFlexApp(
                                 PagosScreen(
                                     deudasPendientes = pendientes,
                                     cargando = cargandoDatos,
-                                    onPagarDeuda = {
-                                        seleccionarDeuda(it)
-                                    },
-                                    onIrAInicio = {
-                                        irAInicio()
-                                    },
-                                    onIrAHistorial = {
-                                        irAHistorial()
-                                    },
-                                    onActualizar = {
-                                        actualizarDatos()
-                                    }
+                                    onPagarDeuda = { seleccionarDeuda(it) },
+                                    onIrAInicio = { irAInicio() },
+                                    onIrAHistorial = { irAHistorial() },
+                                    onActualizar = { actualizarDatos() }
                                 )
                             }
 
@@ -557,26 +521,19 @@ fun PagoFlexApp(
                                 if (deuda == null) {
                                     PantallaInformativaPago(
                                         titulo = "Deuda no disponible",
-                                        texto =
-                                            "Regresa a Pagos y actualiza tus deudas.",
+                                        texto = "Regresa a Pagos y actualiza tus deudas.",
                                         textoBotonVolver = "Volver a Pagos",
-                                        onVolver = {
-                                            irAPagos()
-                                        }
+                                        onVolver = { irAPagos() }
                                     )
                                 } else if (ocupado) {
-                                    CargaPagoFlex(
-                                        texto = "Registrando pago..."
-                                    )
+                                    CargaPagoFlex(texto = "Registrando pago...")
                                 } else {
                                     DetallePagoScreen(
                                         empresa = deuda["empresa"].orEmpty(),
                                         concepto = deuda["concepto"].orEmpty(),
-                                        monto = deuda["monto"]
-                                            ?.toDoubleOrNull() ?: 0.0,
+                                        monto = deuda["monto"]?.toDoubleOrNull() ?: 0.0,
                                         tarjetas = tarjetas,
-                                        tarjetaSeleccionadaId =
-                                            tarjetaElegida?.get("id"),
+                                        tarjetaSeleccionadaId = tarjetaElegida?.get("id"),
                                         onSeleccionarTarjeta = {
                                             tarjetaSeleccionadaId = it
                                         },
@@ -599,45 +556,30 @@ fun PagoFlexApp(
                             "pagoExitoso" -> {
                                 ResultadoPagoScreen(
                                     pago = ultimoPago,
-                                    onVolverInicio = {
-                                        irAInicio()
-                                    },
-                                    onVerHistorial = {
-                                        irAHistorial()
-                                    }
+                                    onVolverInicio = { irAInicio() },
+                                    onVerHistorial = { irAHistorial() }
                                 )
                             }
 
                             "historial" -> {
                                 ResumenHistorialScreen(
                                     pagos = pagos,
-                                    onVolverInicio = {
-                                        irAInicio()
-                                    },
-                                    onIrAPagos = {
-                                        irAPagos()
-                                    }
+                                    onVolverInicio = { irAInicio() },
+                                    onIrAPagos = { irAPagos() }
                                 )
                             }
 
                             else -> {
                                 DashboardScreen(
-                                    nombreUsuario =
-                                        usuario["nombre"].orEmpty(),
+                                    usuarioId = usuarioId ?: 0,
+                                    repository = repository,
+                                    nombreUsuario = usuario["nombre"].orEmpty(),
                                     deudasPendientes = pendientes,
                                     cargando = cargandoDatos,
-                                    onActualizar = {
-                                        actualizarDatos()
-                                    },
-                                    onPagarDeuda = {
-                                        seleccionarDeuda(it)
-                                    },
-                                    onIrAPagos = {
-                                        irAPagos()
-                                    },
-                                    onIrAHistorial = {
-                                        irAHistorial()
-                                    },
+                                    onActualizar = { actualizarDatos() },
+                                    onPagarDeuda = { seleccionarDeuda(it) },
+                                    onIrAPagos = { irAPagos() },
+                                    onIrAHistorial = { irAHistorial() },
                                     onSeleccionarOpcionPerfil = { opcion ->
                                         if (opcion == "salir") {
                                             cerrarSesion()
