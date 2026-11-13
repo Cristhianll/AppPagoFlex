@@ -1,7 +1,5 @@
 package com.example.pagoflex.ui.components
 
-
-
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image

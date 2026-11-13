@@ -405,8 +405,8 @@ fun PagoFlexApp(
                         scope.launch {
                             ocupado = true
                             try {
-                                val resultado = withContext(Dispatchers.IO) {
-                                    repository.iniciarSesion(
+                                val (resultado, errorLogin) = withContext(Dispatchers.IO) {
+                                    repository.iniciarSesionDetalle(
                                         correoIngresado,
                                         claveIngresada
                                     )
@@ -416,14 +416,7 @@ fun PagoFlexApp(
 
                                 if (resultado == null || idSesion == null) {
                                     mensajeExito = false
-                                    val existe = withContext(Dispatchers.IO) {
-                                        repository.existeCorreo(correoIngresado)
-                                    }
-                                    mensaje = if (existe) {
-                                        "La contraseña es incorrecta. Revísala e inténtalo de nuevo."
-                                    } else {
-                                        "No existe una cuenta registrada con ese correo."
-                                    }
+                                    mensaje = errorLogin ?: "No se pudo iniciar sesión."
                                 } else {
                                     pagoViewModel.cargarUsuario(idSesion)
 

@@ -16,16 +16,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.PagoFlexRepository
-import com.example.pagoflex.validation.ValidacionesDeuda
-import com.example.pagoflex.validation.ValidacionesRut
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoTexto
@@ -34,10 +26,17 @@ import com.example.pagoflex.ui.components.NombrePagoFlex
 import com.example.pagoflex.ui.components.SelectorDesplegable
 import com.example.pagoflex.ui.styles.EstilosCampo
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
+import com.example.pagoflex.validation.ValidacionesDeuda
+import com.example.pagoflex.validation.ValidacionesRut
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
 
 private enum class SeccionAdmin(val titulo: String, val icono: String) {
     RESUMEN("Resumen", "📊"),
@@ -139,11 +138,14 @@ fun AdminScreen(
     }
 
     suspend fun cargarDatos() {
-        val resultado = withContext(Dispatchers.IO) {
-            repository.listarClientes() to repository.listarDeudas()
+        val clientesCargados = withContext(Dispatchers.IO) {
+            repository.listarClientes()
         }
-        usuarios = resultado.first
-        deudas = resultado.second
+        val deudasCargadas = withContext(Dispatchers.IO) {
+            repository.listarDeudas()
+        }
+        usuarios = clientesCargados
+        deudas = deudasCargadas
     }
 
     suspend fun recargarDespuesDeOperacion() {
