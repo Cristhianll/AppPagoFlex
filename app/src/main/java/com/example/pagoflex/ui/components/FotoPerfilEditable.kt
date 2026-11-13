@@ -1,6 +1,5 @@
 package com.example.pagoflex.ui.components
 
-import android.os.Build
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -9,6 +8,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -175,6 +175,7 @@ fun FotoPerfilEditable(
             procesarFoto { decodificarReducida(context, uri) }
         }
     }
+
     fun abrirGaleria() {
         try {
             mensaje = ""
