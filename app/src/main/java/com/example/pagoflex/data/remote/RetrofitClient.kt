@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
 
     // Emulador → 10.0.2.2 | Celular → IP de tu PC (ej. 192.168.1.15)
-    private const val BASE_URL = "http://127.0.0.1:8080/"
+    private const val BASE_URL = "http://10.0.2.2:8080/"
 
     @Volatile
     var token: String? = null

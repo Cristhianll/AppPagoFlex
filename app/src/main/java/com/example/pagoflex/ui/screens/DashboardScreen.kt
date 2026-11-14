@@ -69,7 +69,7 @@ fun DashboardScreen(
         )
 
     val totalPendiente = deudasOrdenadas.sumOf {
-        it["monto"]?.toDoubleOrNull() ?: 0.0
+        it["montoPendiente"]?.toDoubleOrNull() ?: it["monto"]?.toDoubleOrNull() ?: 0.0
     }
 
     val saludo = when (
@@ -282,6 +282,10 @@ fun DashboardScreen(
                     ?.toDoubleOrNull() ?: 0.0
 
                 val dias = ValidacionesDeuda.diasHasta(fecha)
+                val totalCuotas = deuda["cantidadCuotas"]?.toIntOrNull() ?: 1
+                val cuotaActual = deuda["cuotaActual"]?.toIntOrNull()
+                val enCuotas = totalCuotas >= 2 && cuotaActual != null
+                val totalDeuda = deuda["montoTotal"]?.toDoubleOrNull() ?: monto
 
                 TarjetaSeccion(
                     forma = RoundedCornerShape(24.dp),
@@ -319,8 +323,16 @@ fun DashboardScreen(
                         color = colores.onSurfaceVariant
                     )
 
+                    if (enCuotas) {
+                        Text(
+                            text = "Cuota $cuotaActual de $totalCuotas",
+                            color = colores.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
                     Text(
-                        text = "Vencimiento: $fecha",
+                        text = if (enCuotas) "Vencimiento de la cuota: $fecha" else "Vencimiento: $fecha",
                         color = colores.onSurfaceVariant
                     )
 
@@ -354,8 +366,16 @@ fun DashboardScreen(
                         fontWeight = FontWeight.Bold
                     )
 
+                    if (enCuotas) {
+                        Text(
+                            text = "Valor de la cuota • Total de la deuda: ${formatoMoneda.format(totalDeuda)}",
+                            color = colores.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
+
                     BotonPrincipal(
-                        texto = "Pagar esta deuda",
+                        texto = if (enCuotas) "Pagar cuota $cuotaActual de $totalCuotas" else "Pagar esta deuda",
                         onClick = {
                             onPagarDeuda(id)
                         },
