@@ -1,6 +1,5 @@
 package com.example.pagoflex.ui.components
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,15 +11,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -38,20 +36,35 @@ fun AvatarUsuario(
     tamano: Dp = 36.dp,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val colores = MaterialTheme.colorScheme
-    var foto by remember(usuarioId) { mutableStateOf<Bitmap?>(null) }
+    val foto by FotoPerfilState.fotoActual.collectAsState()
 
     LaunchedEffect(usuarioId) {
-        foto = try {
-            withContext(Dispatchers.IO) {
-                repository.obtenerFoto(usuarioId)?.let {
-                    BitmapFactory.decodeByteArray(it, 0, it.size)
+        if (FotoPerfilState.necesitaCargar(usuarioId)) {
+            try {
+                val cargada = withContext(Dispatchers.IO) {
+                    val remota = try {
+                        repository.obtenerFoto(usuarioId)
+                    } catch (_: Exception) {
+                        null
+                    }
+
+                    if (remota != null && remota.isNotEmpty()) {
+                        FotoPerfilState.archivoLocal(context, usuarioId).writeBytes(remota)
+                        BitmapFactory.decodeByteArray(remota, 0, remota.size)
+                    } else {
+                        FotoPerfilState.cargarDesdeDisco(context, usuarioId)
+                    }
                 }
+                if (cargada != null) {
+                    FotoPerfilState.actualizar(usuarioId, cargada)
+                }
+            } catch (c: CancellationException) {
+                throw c
+            } catch (_: Exception) {
+                // Conserva la inicial si falla
             }
-        } catch (c: CancellationException) {
-            throw c
-        } catch (_: Exception) {
-            null
         }
     }
 
