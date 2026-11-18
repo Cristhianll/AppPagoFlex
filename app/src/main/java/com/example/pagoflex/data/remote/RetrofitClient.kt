@@ -8,8 +8,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
+<<<<<<< Updated upstream
     // Emulador → 10.0.2.2 | Celular → IP de tu PC (ej. 192.168.1.15)
     private const val BASE_URL = "http://127.0.0.1:8080/"
+=======
+
+    private const val BASE_URL = "http://10.0.2.2:8080/"
+>>>>>>> Stashed changes
 
     @Volatile
     var token: String? = null
@@ -44,5 +49,5 @@ object RetrofitClient {
     val cuotaApi: CuotaApi by lazy { retrofit.create(CuotaApi::class.java) }
     val pagoApi: PagoApi by lazy { retrofit.create(PagoApi::class.java) }
     val tarjetaApi: TarjetaApi by lazy { retrofit.create(TarjetaApi::class.java) }
-    val notificacionApi: NotificacionApi by lazy { retrofit.create(NotificacionApi::class.java) }
+
 }
