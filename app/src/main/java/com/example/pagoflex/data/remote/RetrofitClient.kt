@@ -12,6 +12,7 @@ object RetrofitClient {
 
     @Volatile
     var token: String? = null
+    val notificacionApi: NotificacionApi by lazy { retrofit.create(NotificacionApi::class.java) }
 
     private val authInterceptor = Interceptor { chain ->
         val builder = chain.request().newBuilder()
