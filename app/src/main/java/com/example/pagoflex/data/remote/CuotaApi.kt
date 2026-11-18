@@ -6,7 +6,7 @@ data class GenerarCuotasRequest(
     val deudaId: Long,
     val usuarioId: Long,
     val cantidadCuotas: Int,
-    val primerVencimiento: String // "2026-12-01"
+    val primerVencimiento: String
 )
 
 data class CuotaResponse(

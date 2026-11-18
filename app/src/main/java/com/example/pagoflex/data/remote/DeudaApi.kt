@@ -6,7 +6,6 @@ interface DeudaApi {
     @POST("api/deudas")
     suspend fun crear(@Body body: DeudaRequest): DeudaResponse
 
-    /** Filtros: estado, desde, hasta, montoMin, montoMax */
     @GET("api/deudas")
     suspend fun listar(
         @Query("usuarioId") usuarioId: Long,

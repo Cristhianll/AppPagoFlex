@@ -19,7 +19,6 @@ class PagoFlexRepository(context: Context) {
 
     val maxTarjetas: Int = 5
 
-    // --- AUTENTICACIÓN Y USUARIOS ---
     suspend fun iniciarSesion(correo: String, clave: String): FilaMapa? {
         return iniciarSesionDetalle(correo, clave).first
     }
@@ -148,7 +147,6 @@ class PagoFlexRepository(context: Context) {
         }
     }
 
-    // --- RECUPERACIÓN DE CUENTA ---
     suspend fun obtenerPreguntas(correo: String): List<String>? {
         return try {
             val u = RetrofitClient.usuarioApi.listar(correo.trim())
@@ -185,7 +183,6 @@ class PagoFlexRepository(context: Context) {
         }
     }
 
-    // --- FOTOS DE PERFIL ---
     suspend fun guardarFoto(usuarioId: Int, fotoBytes: ByteArray): Boolean {
         return try {
             val reqFile = fotoBytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
@@ -199,11 +196,10 @@ class PagoFlexRepository(context: Context) {
 
     fun obtenerFoto(usuarioId: Int): ByteArray? = null
 
-    // --- DEUDAS ---
     suspend fun listarDeudas(usuarioId: Int? = null): List<FilaMapa> {
         return try {
             if (usuarioId != null) {
-                RetrofitClient.deudaApi.listar(usuarioId = usuarioId.toLong()).map { deudaAMap(it) }
+                RetrofitClient.deudaApi.listar(usuarioId = usuarioId.toLong()).map { deudaAMap(it, paraUsuario = true) }
             } else {
                 val clientes = RetrofitClient.usuarioApi.listar().filter { it.rol == "USUARIO" }
                 clientes.flatMap { cliente ->
@@ -226,7 +222,8 @@ class PagoFlexRepository(context: Context) {
         concepto: String,
         empresa: String,
         monto: Double,
-        vencimiento: String
+        vencimiento: String,
+        cuotas: Int = 1
     ): Boolean {
         return try {
             RetrofitClient.deudaApi.crear(
@@ -235,7 +232,8 @@ class PagoFlexRepository(context: Context) {
                     concepto = concepto,
                     empresa = empresa,
                     monto = monto,
-                    vencimiento = vencimiento
+                    vencimiento = vencimiento,
+                    cantidadCuotas = cuotas
                 )
             )
             true
@@ -250,7 +248,8 @@ class PagoFlexRepository(context: Context) {
         concepto: String,
         empresa: String,
         monto: Double,
-        vencimiento: String
+        vencimiento: String,
+        cuotas: Int = 1
     ): Boolean {
         return try {
             RetrofitClient.deudaApi.actualizar(
@@ -260,7 +259,8 @@ class PagoFlexRepository(context: Context) {
                     concepto = concepto,
                     empresa = empresa,
                     monto = monto,
-                    vencimiento = vencimiento
+                    vencimiento = vencimiento,
+                    cantidadCuotas = cuotas
                 )
             )
             true
@@ -278,20 +278,33 @@ class PagoFlexRepository(context: Context) {
         }
     }
 
-    // --- PAGOS ---
     suspend fun pagarDeuda(deudaId: Int, usuarioId: Int, tarjetaId: Int): Boolean {
         return try {
             val deuda = RetrofitClient.deudaApi.obtener(deudaId.toLong())
-            RetrofitClient.pagoApi.registrar(
-                PagoRequest(
-                    deudaId = deudaId.toLong(),
-                    usuarioId = usuarioId.toLong(),
-                    monto = deuda.monto,
-                    metodo = "TARJETA",
-                    tarjetaId = tarjetaId.toLong()
+            if ((deuda.cantidadCuotas ?: 1) >= 2) {
+                val cuota = RetrofitClient.cuotaApi.siguiente(deudaId.toLong())
+                RetrofitClient.pagoApi.registrar(
+                    PagoRequest(
+                        deudaId = deudaId.toLong(),
+                        usuarioId = usuarioId.toLong(),
+                        monto = cuota.monto,
+                        metodo = "TARJETA",
+                        tarjetaId = tarjetaId.toLong()
+                    )
                 )
-            )
-            RetrofitClient.deudaApi.marcarPagada(deudaId.toLong())
+                RetrofitClient.cuotaApi.pagar(cuota.id)
+            } else {
+                RetrofitClient.pagoApi.registrar(
+                    PagoRequest(
+                        deudaId = deudaId.toLong(),
+                        usuarioId = usuarioId.toLong(),
+                        monto = deuda.monto,
+                        metodo = "TARJETA",
+                        tarjetaId = tarjetaId.toLong()
+                    )
+                )
+                RetrofitClient.deudaApi.marcarPagada(deudaId.toLong())
+            }
             true
         } catch (_: Exception) {
             false
@@ -300,13 +313,30 @@ class PagoFlexRepository(context: Context) {
 
     suspend fun listarPagos(usuarioId: Int): List<FilaMapa> {
         return try {
-            RetrofitClient.pagoApi.listar(usuarioId.toLong()).map { pagoAMap(it) }
+            val deudas: List<DeudaResponse> = try {
+                RetrofitClient.deudaApi.listar(usuarioId = usuarioId.toLong())
+            } catch (_: Exception) {
+                emptyList()
+            }
+            val tarjetas: List<TarjetaResponse> = try {
+                RetrofitClient.tarjetaApi.listar(usuarioId.toLong())
+            } catch (_: Exception) {
+                emptyList()
+            }
+            RetrofitClient.pagoApi.listar(usuarioId.toLong()).map { pago ->
+                val deuda = deudas.firstOrNull { it.id == pago.deudaId }
+                val tarjeta = tarjetas.firstOrNull { it.id == pago.tarjetaId }
+                pagoAMap(pago) + mapOf(
+                    "concepto" to (deuda?.concepto ?: ""),
+                    "empresa" to (deuda?.empresa ?: ""),
+                    "tarjeta" to (if (tarjeta == null) "" else "${tarjeta.marca ?: "Tarjeta"} •••• ${tarjeta.ultimosDigitos}")
+                )
+            }
         } catch (_: Exception) {
             emptyList()
         }
     }
 
-    // --- TARJETAS ---
     suspend fun listarTarjetasUsuario(usuarioId: Int): List<FilaMapa> {
         return try {
             RetrofitClient.tarjetaApi.listar(usuarioId.toLong()).map { tarjetaAMap(it) }
@@ -357,7 +387,6 @@ class PagoFlexRepository(context: Context) {
         }
     }
 
-    // --- CONVERSORES DTO -> MAP ---
     private fun usuarioAMap(u: UsuarioResponse): FilaMapa = mapOf(
         "id" to u.id.toString(),
         "nombre" to u.nombre,
@@ -370,18 +399,32 @@ class PagoFlexRepository(context: Context) {
     private fun deudaAMap(
         d: DeudaResponse,
         nombreUsuario: String = "",
-        rutUsuario: String = ""
-    ): FilaMapa = mapOf(
-        "id" to d.id.toString(),
-        "usuarioId" to d.usuarioId.toString(),
-        "nombreUsuario" to nombreUsuario,
-        "rutUsuario" to rutUsuario,
-        "concepto" to d.concepto,
-        "empresa" to d.empresa,
-        "monto" to d.monto.toString(),
-        "vencimiento" to d.vencimiento,
-        "estado" to d.estado
-    )
+        rutUsuario: String = "",
+        paraUsuario: Boolean = false
+    ): FilaMapa {
+        val montoActual = d.montoCuota ?: d.monto
+        val vencimientoActual = d.vencimientoActual ?: d.vencimiento
+        val pagado = d.montoPagado ?: 0.0
+        val pendiente = (d.monto - pagado).coerceAtLeast(0.0)
+        return mapOf(
+            "id" to d.id.toString(),
+            "usuarioId" to d.usuarioId.toString(),
+            "nombreUsuario" to nombreUsuario,
+            "rutUsuario" to rutUsuario,
+            "concepto" to d.concepto,
+            "empresa" to d.empresa,
+            "monto" to (if (paraUsuario) montoActual else d.monto).toString(),
+            "vencimiento" to (if (paraUsuario) vencimientoActual else d.vencimiento),
+            "estado" to d.estado,
+            "montoTotal" to d.monto.toString(),
+            "montoPagado" to pagado.toString(),
+            "montoPendiente" to pendiente.toString(),
+            "cantidadCuotas" to (d.cantidadCuotas ?: 1).toString(),
+            "cuotasPagadas" to (d.cuotasPagadas ?: 0).toString(),
+            "cuotaActual" to (d.cuotaActual?.toString() ?: ""),
+            "vencimientoActual" to vencimientoActual
+        )
+    }
 
     private fun pagoAMap(p: PagoResponse): FilaMapa = mapOf(
         "id" to p.id.toString(),

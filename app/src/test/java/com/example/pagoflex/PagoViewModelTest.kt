@@ -1,65 +1,44 @@
 package com.example.pagoflex
 
+import com.example.pagoflex.viewmodel.PagoUiState
 import com.example.pagoflex.viewmodel.PagoViewModel
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-/**
- * Pruebas unitarias del PagoViewModel
- * Patrón: Preparación → Ejecución → Verificación
- */
 class PagoViewModelTest {
 
     private lateinit var viewModel: PagoViewModel
 
     @Before
-    fun setUp() {
-        // 1.- Preparación
+    fun preparar() {
         viewModel = PagoViewModel()
     }
 
     @Test
-    fun estadoInicial_listasVaciasSinError() {
-        // 1.- Preparación (setUp)
+    fun uiState_alCrearElViewModel_noTienePagosNiTarjetas() {
+        val estado = viewModel.uiState.value
 
-        // 2.- Ejecución → leer estado inicial
-
-        // 3.- Verificación
-        assertTrue(viewModel.uiState.value.pagos.isEmpty())
-        assertTrue(viewModel.uiState.value.tarjetas.isEmpty())
-        assertFalse(viewModel.uiState.value.cargando)
-        assertFalse(viewModel.uiState.value.pagoExitoso)
-        assertNull(viewModel.uiState.value.error)
+        assertTrue(estado.pagos.isEmpty())
+        assertTrue(estado.tarjetas.isEmpty())
     }
 
     @Test
-    fun estadoInicial_pagoExitosoEsFalse() {
-        // 1.- Preparación
-        // 2.- Ejecución
-        val resultado = viewModel.uiState.value.pagoExitoso
+    fun uiState_alCrearElViewModel_noTieneOperacionEnCursoNiResultadoPrevio() {
+        val estado = viewModel.uiState.value
 
-        // 3.- Verificación
-        assertFalse(resultado)
+        assertFalse(estado.cargando)
+        assertFalse(estado.pagoExitoso)
+        assertNull(estado.error)
     }
 
     @Test
-    fun estadoInicial_cargandoEsFalse() {
-        // 1.- Preparación
-        // 2.- Ejecución
-        val cargando = viewModel.uiState.value.cargando
+    fun alternarNotificaciones_conNotificacionesActivas_lasDesactiva() {
+        viewModel.alternarNotificaciones()
 
-        // 3.- Verificación
-        assertFalse(cargando)
-    }
-
-    @Test
-    fun estadoInicial_errorEsNull() {
-        // 1.- Preparación
-        // 2.- Ejecución
-        val error = viewModel.uiState.value.error
-
-        // 3.- Verificación
-        assertNull(error)
+        assertFalse(viewModel.uiState.value.notificacionesActivas)
     }
 }

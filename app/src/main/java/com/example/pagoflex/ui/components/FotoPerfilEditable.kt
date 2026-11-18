@@ -31,10 +31,42 @@ import androidx.core.content.ContextCompat
 import com.example.pagoflex.data.PagoFlexRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+
+object FotoPerfilState {
+    private val _fotoActual = MutableStateFlow<Bitmap?>(null)
+    val fotoActual: StateFlow<Bitmap?> = _fotoActual.asStateFlow()
+
+    private var usuarioCargadoId: Int = -1
+
+    fun actualizar(usuarioId: Int, bitmap: Bitmap?) {
+        usuarioCargadoId = usuarioId
+        _fotoActual.value = bitmap
+    }
+
+    fun necesitaCargar(usuarioId: Int): Boolean {
+        return usuarioId > 0 && (usuarioCargadoId != usuarioId || _fotoActual.value == null)
+    }
+
+    fun archivoLocal(context: Context, usuarioId: Int): File {
+        return File(context.filesDir, "foto_perfil_usuario_$usuarioId.jpg")
+    }
+
+    fun cargarDesdeDisco(context: Context, usuarioId: Int): Bitmap? {
+        val archivo = archivoLocal(context, usuarioId)
+        return if (archivo.exists()) {
+            BitmapFactory.decodeFile(archivo.absolutePath)
+        } else {
+            null
+        }
+    }
+}
 
 private fun prepararJpg(original: Bitmap, maxLado: Int = 512): ByteArray {
     val mayor = maxOf(original.width, original.height)
@@ -82,7 +114,8 @@ fun FotoPerfilEditable(
     val colores = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
 
-    var foto by remember(usuarioId) { mutableStateOf<Bitmap?>(null) }
+    val fotoCompartida by FotoPerfilState.fotoActual.collectAsState()
+    var foto by remember(usuarioId) { mutableStateOf<Bitmap?>(fotoCompartida) }
     var cargando by remember(usuarioId) { mutableStateOf(true) }
     var guardando by remember(usuarioId) { mutableStateOf(false) }
     var mensaje by remember(usuarioId) { mutableStateOf("") }
@@ -94,22 +127,38 @@ fun FotoPerfilEditable(
     LaunchedEffect(usuarioId) {
         cargando = true
         try {
-            foto = withContext(Dispatchers.IO) {
-                val legado = File(context.filesDir, "foto_perfil_usuario_$usuarioId.jpg")
-                if (legado.exists()) {
-                    if (repository.obtenerFoto(usuarioId) == null) {
-                        repository.guardarFoto(usuarioId, legado.readBytes())
-                    }
-                    legado.delete()
+            val cargada = withContext(Dispatchers.IO) {
+                val remota = try {
+                    repository.obtenerFoto(usuarioId)
+                } catch (_: Exception) {
+                    null
                 }
-                repository.obtenerFoto(usuarioId)?.let {
-                    BitmapFactory.decodeByteArray(it, 0, it.size)
+
+                if (remota != null && remota.isNotEmpty()) {
+                    FotoPerfilState.archivoLocal(context, usuarioId).writeBytes(remota)
+                    BitmapFactory.decodeByteArray(remota, 0, remota.size)
+                } else {
+                    val local = FotoPerfilState.cargarDesdeDisco(context, usuarioId)
+                    if (local != null) {
+                        try {
+                            repository.guardarFoto(
+                                usuarioId,
+                                FotoPerfilState.archivoLocal(context, usuarioId).readBytes()
+                            )
+                        } catch (_: Exception) {
+                        }
+                    }
+                    local
                 }
             }
+            foto = cargada
+            FotoPerfilState.actualizar(usuarioId, cargada)
         } catch (c: CancellationException) {
             throw c
         } catch (_: Exception) {
-            mensaje = "No se pudo cargar la foto de perfil."
+            val respaldo = FotoPerfilState.cargarDesdeDisco(context, usuarioId)
+            foto = respaldo
+            FotoPerfilState.actualizar(usuarioId, respaldo)
         } finally {
             cargando = false
         }
@@ -122,11 +171,22 @@ fun FotoPerfilEditable(
             try {
                 val resultado = withContext(Dispatchers.IO) {
                     val bitmap = obtener() ?: return@withContext null
-                    val guardada = repository.guardarFoto(usuarioId, prepararJpg(bitmap))
-                    if (guardada) bitmap else null
+                    val bytesJpg = prepararJpg(bitmap)
+
+                    // 1. Persistir siempre en disco local para que no desaparezca
+                    FotoPerfilState.archivoLocal(context, usuarioId).writeBytes(bytesJpg)
+
+                    // 2. Guardar también en el repositorio / BD
+                    try {
+                        repository.guardarFoto(usuarioId, bytesJpg)
+                    } catch (_: Exception) {
+                    }
+
+                    BitmapFactory.decodeByteArray(bytesJpg, 0, bytesJpg.size) ?: bitmap
                 }
                 if (resultado != null) {
                     foto = resultado
+                    FotoPerfilState.actualizar(usuarioId, resultado)
                     mensaje = "Foto de perfil actualizada."
                 } else {
                     mensaje = "No se pudo guardar la foto. Intenta nuevamente."
@@ -237,7 +297,7 @@ fun FotoPerfilEditable(
                 .background(colores.secondary),
             contentAlignment = Alignment.Center
         ) {
-            val imagenActual = foto
+            val imagenActual = foto ?: fotoCompartida
             if (imagenActual != null) {
                 Image(
                     bitmap = imagenActual.asImageBitmap(),

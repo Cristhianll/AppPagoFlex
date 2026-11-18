@@ -60,7 +60,7 @@ private data class Acceso(
 
 private fun estaVencida(deuda: Map<String, String>): Boolean =
     deuda["estado"] == "PENDIENTE" &&
-            (ValidacionesDeuda.diasHasta(deuda["vencimiento"].orEmpty()) ?: 0L) < 0L
+            (ValidacionesDeuda.diasHasta(deuda["vencimientoActual"] ?: deuda["vencimiento"].orEmpty()) ?: 0L) < 0L
 
 private fun etiquetaCliente(cliente: Map<String, String>): String {
     val rut = cliente["rut"].orEmpty()
@@ -79,7 +79,6 @@ fun AdminScreen(
     val tema = LocalControlTemaPagoFlex.current
     val scope = rememberCoroutineScope()
 
-    // GESTOR crea/edita/elimina deudas. ADMIN solo consulta.
     val puedeGestionar = usuario["rol"] == "GESTOR"
 
     val formatoMoneda = remember { NumberFormat.getCurrencyInstance(Locale("es", "CL")) }
@@ -99,6 +98,9 @@ fun AdminScreen(
     var empresa by remember { mutableStateOf("") }
     var monto by remember { mutableStateOf("") }
     var vencimiento by remember { mutableStateOf("") }
+    var enCuotas by remember { mutableStateOf(false) }
+    var cantidadCuotas by remember { mutableIntStateOf(3) }
+    var cuotasBloqueadas by remember { mutableStateOf(false) }
 
     var mensaje by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
@@ -110,8 +112,10 @@ fun AdminScreen(
     val pendientes = deudas.filter { it["estado"] == "PENDIENTE" }
     val pagadas = deudas.filter { it["estado"] == "PAGADA" }
     val vencidas = pendientes.filter { estaVencida(it) }
-    val totalPorCobrar = pendientes.sumOf { it["monto"]?.toDoubleOrNull() ?: 0.0 }
-    val totalRecaudado = pagadas.sumOf { it["monto"]?.toDoubleOrNull() ?: 0.0 }
+    val totalPorCobrar = pendientes.sumOf {
+        it["montoPendiente"]?.toDoubleOrNull() ?: it["monto"]?.toDoubleOrNull() ?: 0.0
+    }
+    val totalRecaudado = deudas.sumOf { it["montoPagado"]?.toDoubleOrNull() ?: 0.0 }
 
     val deudasFiltradas = deudas.filter { d ->
         val pasaFiltro = when (filtro) {
@@ -135,6 +139,9 @@ fun AdminScreen(
         empresa = ""
         monto = ""
         vencimiento = ""
+        enCuotas = false
+        cantidadCuotas = 3
+        cuotasBloqueadas = false
     }
 
     suspend fun cargarDatos() {
@@ -203,9 +210,16 @@ fun AdminScreen(
             return
         }
 
+        if (enCuotas && (montoIngresado ?: 0.0) < cantidadCuotas) {
+            mensaje = "El monto es muy bajo para dividirlo en $cantidadCuotas cuotas."
+            error = true
+            return
+        }
+
         val usuarioGuardar = idUsuario ?: return
         val valorMonto = montoIngresado ?: return
         val idEdicion = deudaEditandoId
+        val cuotasGuardar = if (enCuotas) cantidadCuotas else 1
         val conceptoGuardar = concepto.trim()
         val empresaGuardar = empresa.trim()
 
@@ -215,19 +229,24 @@ fun AdminScreen(
                 val guardada = withContext(Dispatchers.IO) {
                     if (idEdicion == null) {
                         repository.crearDeuda(
-                            usuarioGuardar, conceptoGuardar, empresaGuardar, valorMonto, fechaIngresada
+                            usuarioGuardar, conceptoGuardar, empresaGuardar, valorMonto, fechaIngresada,
+                            cuotasGuardar
                         )
                     } else {
                         repository.actualizarDeuda(
-                            idEdicion, usuarioGuardar, conceptoGuardar, empresaGuardar, valorMonto, fechaIngresada
+                            idEdicion, usuarioGuardar, conceptoGuardar, empresaGuardar, valorMonto, fechaIngresada,
+                            cuotasGuardar
                         )
                     }
                 }
 
                 if (guardada) {
                     limpiarFormulario()
-                    mensaje = if (idEdicion == null) "Deuda creada correctamente."
-                    else "Deuda modificada correctamente."
+                    mensaje = when {
+                        idEdicion != null -> "Deuda modificada correctamente."
+                        cuotasGuardar >= 2 -> "Deuda creada en $cuotasGuardar cuotas."
+                        else -> "Deuda creada correctamente."
+                    }
                     error = false
                     filtro = FiltroDeuda.TODAS
                     busqueda = ""
@@ -235,7 +254,7 @@ fun AdminScreen(
                     recargarDespuesDeOperacion()
                 } else {
                     mensaje = if (idEdicion == null) "No se pudo crear la deuda. Revisa el cliente y los datos."
-                    else "No se pudo modificar. Puede que ya tenga pagos o que no exista."
+                    else "No se pudo modificar. Puede que ya tenga pagos o cuotas, o que no exista."
                     error = true
                 }
             } catch (_: Exception) {
@@ -263,6 +282,12 @@ fun AdminScreen(
         empresa = deuda["empresa"].orEmpty()
         monto = deuda["monto"].orEmpty().let { if (it.endsWith(".0")) it.dropLast(2) else it }
         vencimiento = deuda["vencimiento"].orEmpty()
+
+        val cuotasDeuda = deuda["cantidadCuotas"]?.toIntOrNull() ?: 1
+        enCuotas = cuotasDeuda >= 2
+        cantidadCuotas = if (cuotasDeuda >= 2) cuotasDeuda else 3
+        cuotasBloqueadas = (deuda["cuotasPagadas"]?.toIntOrNull() ?: 0) > 0 ||
+                deuda["estado"] == "PAGADA"
 
         mensaje = "Editando deuda #$id."
         error = false
@@ -486,6 +511,9 @@ fun AdminScreen(
                         empresa = empresa, onEmpresa = { empresa = it },
                         monto = monto, onMonto = { monto = it },
                         vencimiento = vencimiento, onVencimiento = { vencimiento = it },
+                        enCuotas = enCuotas, onEnCuotas = { enCuotas = it },
+                        cantidadCuotas = cantidadCuotas, onCantidadCuotas = { cantidadCuotas = it },
+                        cuotasBloqueadas = cuotasBloqueadas,
                         habilitado = !ocupado,
                         onGuardar = { guardarDeuda() },
                         onCancelar = {
@@ -827,7 +855,7 @@ private fun PanelDeudas(
             val pendiente = deuda["estado"] == "PENDIENTE"
             val vencida = estaVencida(deuda)
             val montoDeuda = deuda["monto"]?.toDoubleOrNull() ?: 0.0
-            val fecha = deuda["vencimiento"].orEmpty()
+            val fecha = deuda["vencimientoActual"] ?: deuda["vencimiento"].orEmpty()
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -887,6 +915,15 @@ private fun PanelDeudas(
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
+
+                    val cuotasDeLaDeuda = deuda["cantidadCuotas"]?.toIntOrNull() ?: 1
+                    if (cuotasDeLaDeuda >= 2) {
+                        Text(
+                            text = "En $cuotasDeLaDeuda cuotas • pagadas: ${deuda["cuotasPagadas"].orEmpty()} de $cuotasDeLaDeuda",
+                            fontSize = 13.sp,
+                            color = colores.onSurfaceVariant
+                        )
+                    }
 
                     if (pendiente) {
                         val dias = ValidacionesDeuda.diasHasta(fecha)
@@ -965,7 +1002,9 @@ private fun PanelClientes(
             val deudasCliente = deudas.filter {
                 it["usuarioId"] == id && it["estado"] == "PENDIENTE"
             }
-            val total = deudasCliente.sumOf { it["monto"]?.toDoubleOrNull() ?: 0.0 }
+            val total = deudasCliente.sumOf {
+                it["montoPendiente"]?.toDoubleOrNull() ?: it["monto"]?.toDoubleOrNull() ?: 0.0
+            }
             val rut = cliente["rut"].orEmpty()
 
             Card(
@@ -1040,6 +1079,11 @@ private fun PanelFormulario(
     onMonto: (String) -> Unit,
     vencimiento: String,
     onVencimiento: (String) -> Unit,
+    enCuotas: Boolean,
+    onEnCuotas: (Boolean) -> Unit,
+    cantidadCuotas: Int,
+    onCantidadCuotas: (Int) -> Unit,
+    cuotasBloqueadas: Boolean,
     habilitado: Boolean,
     onGuardar: () -> Unit,
     onCancelar: () -> Unit
@@ -1103,6 +1147,16 @@ private fun PanelFormulario(
                         habilitado = habilitado
                     )
 
+                    OpcionCuotas(
+                        enCuotas = enCuotas,
+                        onEnCuotas = onEnCuotas,
+                        cantidad = cantidadCuotas,
+                        onCantidad = onCantidadCuotas,
+                        monto = monto,
+                        bloqueado = cuotasBloqueadas,
+                        habilitado = habilitado
+                    )
+
                     BotonPrincipal(
                         texto = if (editandoId == null) "Crear deuda" else "Guardar cambios",
                         onClick = onGuardar,
@@ -1125,6 +1179,72 @@ private fun PanelFormulario(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun OpcionCuotas(
+    enCuotas: Boolean,
+    onEnCuotas: (Boolean) -> Unit,
+    cantidad: Int,
+    onCantidad: (Int) -> Unit,
+    monto: String,
+    bloqueado: Boolean,
+    habilitado: Boolean
+) {
+    val colores = MaterialTheme.colorScheme
+    val formatoMoneda = remember { NumberFormat.getCurrencyInstance(Locale("es", "CL")) }
+    val opciones = remember { (2..12).toList() }
+    val montoIngresado = monto.trim().replace(",", ".").toDoubleOrNull()
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "¿Pagar en cuotas?",
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = when {
+                        bloqueado -> "Ya hay pagos registrados: no se puede cambiar la forma de pago"
+                        enCuotas -> "La deuda se dividirá en cuotas mensuales"
+                        else -> "Pago único en la fecha de vencimiento"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colores.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = enCuotas,
+                onCheckedChange = onEnCuotas,
+                enabled = habilitado && !bloqueado
+            )
+        }
+
+        if (enCuotas) {
+            SelectorDesplegable(
+                etiqueta = "Cantidad de cuotas",
+                textoSeleccionado = "$cantidad cuotas",
+                opciones = opciones.map { "$it cuotas" },
+                onSeleccion = { indice -> onCantidad(opciones[indice]) },
+                habilitado = habilitado && !bloqueado
+            )
+
+            val detalle = if (montoIngresado != null && montoIngresado > 0) {
+                "$cantidad cuotas de aprox. ${formatoMoneda.format(montoIngresado / cantidad)}. "
+            } else {
+                ""
+            }
+            Text(
+                text = detalle + "La primera cuota vence en la fecha elegida y las demás cada mes.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colores.onSurfaceVariant
+            )
         }
     }
 }

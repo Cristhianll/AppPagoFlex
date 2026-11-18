@@ -207,6 +207,10 @@ fun PagoFlexApp(
             "${tarjetaElegida["marca"].orEmpty()} •••• " +
                     tarjetaElegida["ultimosDigitos"].orEmpty()
 
+        val totalCuotas = deuda["cantidadCuotas"]?.toIntOrNull() ?: 1
+        val esUltimoPago = totalCuotas < 2 || deuda["cuotaActual"]?.toIntOrNull() == totalCuotas
+        val sufijoCuota = textoCuota(deuda)
+
         scope.launch {
             ocupado = true
             try {
@@ -220,14 +224,14 @@ fun PagoFlexApp(
 
                 if (pagada) {
                     ultimoPago = mapOf(
-                        "concepto" to deuda["concepto"].orEmpty(),
+                        "concepto" to (deuda["concepto"].orEmpty() + sufijoCuota),
                         "empresa" to deuda["empresa"].orEmpty(),
                         "monto" to deuda["monto"].orEmpty(),
                         "tarjeta" to etiquetaTarjeta
                     )
 
                     deudas = deudas.map { actual ->
-                        if (actual["id"] == idDeuda.toString()) {
+                        if (actual["id"] == idDeuda.toString() && esUltimoPago) {
                             actual + ("estado" to "PAGADA")
                         } else {
                             actual
@@ -523,7 +527,7 @@ fun PagoFlexApp(
                                 } else {
                                     DetallePagoScreen(
                                         empresa = deuda["empresa"].orEmpty(),
-                                        concepto = deuda["concepto"].orEmpty(),
+                                        concepto = deuda["concepto"].orEmpty() + textoCuota(deuda),
                                         monto = deuda["monto"]?.toDoubleOrNull() ?: 0.0,
                                         tarjetas = tarjetas,
                                         tarjetaSeleccionadaId = tarjetaElegida?.get("id"),
@@ -590,4 +594,10 @@ fun PagoFlexApp(
             }
         }
     }
+}
+
+private fun textoCuota(deuda: Map<String, String>): String {
+    val total = deuda["cantidadCuotas"]?.toIntOrNull() ?: 1
+    val actual = deuda["cuotaActual"]?.toIntOrNull()
+    return if (total >= 2 && actual != null) " (cuota $actual de $total)" else ""
 }

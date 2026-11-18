@@ -1,12 +1,10 @@
 package com.example.pagoflex.data.remote
 
-// ============ USUARIOS / JWT ============
 data class LoginRequest(val correo: String, val contrasena: String)
 
-/** Respuesta de login con JWT */
 data class LoginResponse(
     val token: String,
-    val tipo: String,          // "Bearer"
+    val tipo: String,
     val id: Long,
     val nombre: String,
     val rut: String,
@@ -58,13 +56,13 @@ data class RecuperarRequest(
     val nuevaContrasena: String
 )
 
-// ============ DEUDAS ============
 data class DeudaRequest(
     val usuarioId: Long,
     val concepto: String,
     val empresa: String,
     val monto: Double,
-    val vencimiento: String
+    val vencimiento: String,
+    val cantidadCuotas: Int? = null
 )
 
 data class DeudaResponse(
@@ -74,10 +72,15 @@ data class DeudaResponse(
     val empresa: String,
     val monto: Double,
     val vencimiento: String,
-    val estado: String
+    val estado: String,
+    val cantidadCuotas: Int? = null,
+    val cuotasPagadas: Int? = null,
+    val cuotaActual: Int? = null,
+    val montoCuota: Double? = null,
+    val vencimientoActual: String? = null,
+    val montoPagado: Double? = null
 )
 
-// ============ PAGOS ============
 data class PagoRequest(
     val deudaId: Long,
     val usuarioId: Long,
@@ -96,7 +99,6 @@ data class PagoResponse(
     val tarjetaId: Long?
 )
 
-// ============ TARJETAS ============
 data class TarjetaRequest(
     val usuarioId: Long,
     val ultimosDigitos: String,
