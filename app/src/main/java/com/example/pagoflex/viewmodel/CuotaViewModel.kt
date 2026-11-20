@@ -37,6 +37,11 @@ class CuotaViewModel : ViewModel() {
     }
 
     fun generar(deudaId: Long, usuarioId: Long, cantidad: Int, primerVenc: String) {
+        if (cantidad !in 1..72) {
+            _uiState.update { it.copy(cargando = false, error = "Máximo 72 cuotas") }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true, error = null) }
             try {

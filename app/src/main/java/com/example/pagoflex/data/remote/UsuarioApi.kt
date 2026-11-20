@@ -31,4 +31,18 @@ interface UsuarioApi {
 
     @DELETE("api/usuarios/{id}")
     suspend fun eliminar(@Path("id") id: Long)
+
+
+    @PUT("api/usuarios/{id}/habilitar")
+    suspend fun habilitar(@Path("id") id: Long): UsuarioResponse
+
+    @PUT("api/usuarios/{id}/deshabilitar")
+    suspend fun deshabilitar(@Path("id") id: Long): UsuarioResponse
+
+    @GET("api/usuarios/pendientes")
+    suspend fun listarPendientes(): List<UsuarioResponse>
+
+    @Multipart
+    @PUT("api/usuarios/{id}/foto")
+    suspend fun subirFoto(@Path("id") id: Long, @Part foto: okhttp3.MultipartBody.Part): UsuarioResponse
 }

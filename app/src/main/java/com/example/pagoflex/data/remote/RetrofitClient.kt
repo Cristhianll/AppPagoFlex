@@ -12,7 +12,7 @@ object RetrofitClient {
 
     @Volatile
     var token: String? = null
-
+    val ticketApi: TicketApi by lazy { retrofit.create(TicketApi::class.java) }
     private val authInterceptor = Interceptor { chain ->
         val builder = chain.request().newBuilder()
         token?.let { builder.header("Authorization", "Bearer $it") }
