@@ -14,7 +14,7 @@ API Gateway :8080 ──► usuarios · deudas · pagos · tarjetas
                       (cada uno con su propia base de datos MySQL)
 ```
 
-La app ya no usa SQLite: todos los datos viven en los microservicios. El backend está en su propio repositorio: **[agrega aquí el enlace al repositorio del backend]**.
+La app ya no usa SQLite: todos los datos viven en los microservicios. El backend está en su propio repositorio: "https://github.com/emiliazx/pagoflex-backend".
 
 ## Funcionalidades
 
