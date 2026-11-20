@@ -27,11 +27,10 @@ interface UsuarioApi {
 
     @Multipart
     @PUT("api/usuarios/{id}/foto")
-    suspend fun subirFoto(@Path("id") id: Long, @Part foto: MultipartBody.Part)
+    suspend fun subirFoto(@Path("id") id: Long, @Part foto: MultipartBody.Part): UsuarioResponse
 
     @DELETE("api/usuarios/{id}")
     suspend fun eliminar(@Path("id") id: Long)
-
 
     @PUT("api/usuarios/{id}/habilitar")
     suspend fun habilitar(@Path("id") id: Long): UsuarioResponse
@@ -41,8 +40,4 @@ interface UsuarioApi {
 
     @GET("api/usuarios/pendientes")
     suspend fun listarPendientes(): List<UsuarioResponse>
-
-    @Multipart
-    @PUT("api/usuarios/{id}/foto")
-    suspend fun subirFoto(@Path("id") id: Long, @Part foto: okhttp3.MultipartBody.Part): UsuarioResponse
 }
