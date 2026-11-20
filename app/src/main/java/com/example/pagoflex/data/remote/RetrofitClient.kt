@@ -7,12 +7,11 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-
-    private const val BASE_URL = "https://05nbzdcx-8080.brs.devtunnels.ms/"
+    //"http://10.0.2.2:8080/" local url
+    private const val BASE_URL = "http://10.0.2.2:8080/"
 
     @Volatile
     var token: String? = null
-    val notificacionApi: NotificacionApi by lazy { retrofit.create(NotificacionApi::class.java) }
 
     private val authInterceptor = Interceptor { chain ->
         val builder = chain.request().newBuilder()
