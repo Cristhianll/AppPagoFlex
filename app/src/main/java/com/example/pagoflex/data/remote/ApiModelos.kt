@@ -10,7 +10,10 @@ data class LoginResponse(
     val rut: String,
     val correo: String,
     val rol: String,
-    val tieneFoto: Boolean = false
+    val tieneFoto: Boolean = false,
+    val fotoUrl: String? = null,
+    val habilitado: Boolean = false,
+    val bloqueado: Boolean = false
 )
 
 data class RegistroRequest(
