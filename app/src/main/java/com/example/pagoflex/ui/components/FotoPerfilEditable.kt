@@ -173,10 +173,8 @@ fun FotoPerfilEditable(
                     val bitmap = obtener() ?: return@withContext null
                     val bytesJpg = prepararJpg(bitmap)
 
-                    // 1. Persistir siempre en disco local para que no desaparezca
                     FotoPerfilState.archivoLocal(context, usuarioId).writeBytes(bytesJpg)
 
-                    // 2. Guardar también en el repositorio / BD
                     try {
                         repository.guardarFoto(usuarioId, bytesJpg)
                     } catch (_: Exception) {

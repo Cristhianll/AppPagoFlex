@@ -7,12 +7,11 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    //"http://10.0.2.2:8080/" local url
     private const val BASE_URL = "http://10.0.2.2:8080/"
 
     @Volatile
     var token: String? = null
-    val ticketApi: TicketApi by lazy { retrofit.create(TicketApi::class.java) }
+
     private val authInterceptor = Interceptor { chain ->
         val builder = chain.request().newBuilder()
         token?.let { builder.header("Authorization", "Bearer $it") }
@@ -43,5 +42,5 @@ object RetrofitClient {
     val cuotaApi: CuotaApi by lazy { retrofit.create(CuotaApi::class.java) }
     val pagoApi: PagoApi by lazy { retrofit.create(PagoApi::class.java) }
     val tarjetaApi: TarjetaApi by lazy { retrofit.create(TarjetaApi::class.java) }
-
+    val ticketApi: TicketApi by lazy { retrofit.create(TicketApi::class.java) }
 }

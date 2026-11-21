@@ -1,10 +1,8 @@
 package com.example.pagoflex.ui.theme
 
-
 import androidx.compose.ui.unit.dp
 
 object Dimens{
-
 
     val espacioMini = 4.dp
     val espacioChico = 8.dp

@@ -17,7 +17,7 @@ class PagoFlexRepository(context: Context) {
         sesionPrefs.token()?.let { RetrofitClient.token = it }
     }
 
-    val maxTarjetas: Int = 5
+    val maxTarjetas: Int = 4
 
     suspend fun iniciarSesion(correo: String, clave: String): FilaMapa? {
         return iniciarSesionDetalle(correo, clave).first
@@ -34,7 +34,8 @@ class PagoFlexRepository(context: Context) {
                 "rut" to res.rut,
                 "correo" to res.correo,
                 "rol" to res.rol,
-                "tieneFoto" to if (res.tieneFoto) "1" else "0"
+                "tieneFoto" to if (res.tieneFoto) "1" else "0",
+                "fotoUrl" to (res.fotoUrl ?: "")
             )
             mapa to null
         } catch (e: HttpException) {
@@ -42,7 +43,7 @@ class PagoFlexRepository(context: Context) {
             android.util.Log.e("LOGIN_ERROR", "HTTP ${e.code()}: $bodyError", e)
             val detalle = when (e.code()) {
                 401 -> "Correo o contraseña incorrectos."
-                403 -> "Acceso denegado (403): $bodyError"
+                403 -> "Tu cuenta aún está pendiente de aprobación. Un gestor debe habilitarla para que puedas ingresar."
                 423 -> "Cuenta bloqueada por múltiples intentos fallidos."
                 else -> "Error HTTP ${e.code()}: $bodyError"
             }
@@ -105,7 +106,24 @@ class PagoFlexRepository(context: Context) {
     }
 
     suspend fun listarClientes(): List<FilaMapa> {
-        return listarUsuarios().filter { it["rol"] == "USUARIO" }
+        return listarUsuarios().filter { it["rol"] == "USUARIO" && it["habilitado"] != "0" }
+    }
+
+    suspend fun listarPendientes(): List<FilaMapa> {
+        return try {
+            RetrofitClient.usuarioApi.listarPendientes().map { usuarioAMap(it) }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun habilitarUsuario(usuarioId: Int): Boolean {
+        return try {
+            RetrofitClient.usuarioApi.habilitar(usuarioId.toLong())
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     suspend fun actualizarPerfil(
@@ -194,7 +212,18 @@ class PagoFlexRepository(context: Context) {
         }
     }
 
-    fun obtenerFoto(usuarioId: Int): ByteArray? = null
+    suspend fun obtenerFoto(usuarioId: Int): ByteArray? {
+        return try {
+            val url = RetrofitClient.usuarioApi.obtener(usuarioId.toLong()).fotoUrl
+            if (url.isNullOrBlank()) {
+                null
+            } else {
+                RetrofitClient.usuarioApi.descargarFoto(url.trimStart('/')).use { it.bytes() }
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     suspend fun listarDeudas(usuarioId: Int? = null): List<FilaMapa> {
         return try {
@@ -393,7 +422,9 @@ class PagoFlexRepository(context: Context) {
         "rut" to u.rut,
         "correo" to u.correo,
         "rol" to u.rol,
-        "tieneFoto" to if (u.tieneFoto) "1" else "0"
+        "tieneFoto" to if (u.tieneFoto) "1" else "0",
+        "fotoUrl" to (u.fotoUrl ?: ""),
+        "habilitado" to if (u.habilitado) "1" else "0"
     )
 
     private fun deudaAMap(

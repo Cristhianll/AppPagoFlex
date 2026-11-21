@@ -239,7 +239,6 @@ private fun ContenidoFormulario(viewModel: FormularioViewModel) {
                 )
             }
 
-
             TarjetaSeccion(
                 forma = RoundedCornerShape(24.dp),
                 colores = CardDefaults.cardColors(

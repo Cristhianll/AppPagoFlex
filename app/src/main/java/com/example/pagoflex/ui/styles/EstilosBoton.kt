@@ -21,9 +21,7 @@ object EstilosBoton {
 
     val forma = RoundedCornerShape(Dimens.radioBoton)
 
-
     val relleno = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
-
 
     @Composable
     fun coloresPrincipal(): ButtonColors = ButtonDefaults.buttonColors(
@@ -33,12 +31,10 @@ object EstilosBoton {
         disabledContentColor = Blanco
     )
 
-
     @Composable
     fun coloresSecundario() = ButtonDefaults.outlinedButtonColors(
         contentColor = MaterialTheme.colorScheme.primary
     )
-
 
     @Composable
     fun bordeSecundario(): BorderStroke = BorderStroke(
@@ -52,7 +48,6 @@ object EstilosBoton {
         pressedElevation = 1.dp
     )
 }
-
 
 fun Modifier.estiloAltoBoton(): Modifier =
     this.height(Dimens.alturaBoton)

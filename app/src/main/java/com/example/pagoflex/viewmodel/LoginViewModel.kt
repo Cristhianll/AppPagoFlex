@@ -38,7 +38,7 @@ class LoginViewModel : ViewModel() {
                 val response = RetrofitClient.usuarioApi.login(
                     LoginRequest(s.correo.trim(), s.contrasena)
                 )
-                // Guardar token para las siguientes peticiones
+
                 RetrofitClient.token = response.token
                 _uiState.update { it.copy(cargando = false, loginResponse = response) }
             } catch (e: Exception) {

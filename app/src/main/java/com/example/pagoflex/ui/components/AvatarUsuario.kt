@@ -63,7 +63,7 @@ fun AvatarUsuario(
             } catch (c: CancellationException) {
                 throw c
             } catch (_: Exception) {
-                // Conserva la inicial si falla
+
             }
         }
     }

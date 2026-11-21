@@ -28,6 +28,7 @@ import com.example.pagoflex.ui.styles.EstilosCampo
 import com.example.pagoflex.ui.theme.LocalControlTemaPagoFlex
 import com.example.pagoflex.validation.ValidacionesDeuda
 import com.example.pagoflex.validation.ValidacionesRut
+import com.example.pagoflex.viewmodel.TicketViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -42,7 +43,9 @@ private enum class SeccionAdmin(val titulo: String, val icono: String) {
     RESUMEN("Resumen", "📊"),
     DEUDAS("Deudas", "📄"),
     CLIENTES("Clientes", "👥"),
-    NUEVA("Nueva", "➕")
+    NUEVA("Nueva", "➕"),
+    TICKETS("Tickets", "🎫"),
+    SOLICITUDES("Solicitudes", "📝")
 }
 
 private enum class FiltroDeuda(val titulo: String) {
@@ -73,6 +76,7 @@ private fun etiquetaCliente(cliente: Map<String, String>): String {
 fun AdminScreen(
     repository: PagoFlexRepository,
     usuario: Map<String, String>,
+    ticketViewModel: TicketViewModel,
     onCerrarSesion: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
@@ -89,6 +93,7 @@ fun AdminScreen(
 
     var usuarios by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
     var deudas by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
+    var solicitudes by remember { mutableStateOf<List<Map<String, String>>>(emptyList()) }
 
     var usuarioSeleccionadoId by remember { mutableStateOf<String?>(null) }
     var deudaEditandoId by remember { mutableStateOf<Int?>(null) }
@@ -151,8 +156,14 @@ fun AdminScreen(
         val deudasCargadas = withContext(Dispatchers.IO) {
             repository.listarDeudas()
         }
+        val solicitudesCargadas = if (puedeGestionar) {
+            withContext(Dispatchers.IO) { repository.listarPendientes() }
+        } else {
+            emptyList()
+        }
         usuarios = clientesCargados
         deudas = deudasCargadas
+        solicitudes = solicitudesCargadas
     }
 
     suspend fun recargarDespuesDeOperacion() {
@@ -174,6 +185,37 @@ fun AdminScreen(
                 error = false
             } catch (_: Exception) {
                 mensaje = "No se pudo actualizar la información."
+                error = true
+            } finally {
+                ocupado = false
+            }
+        }
+    }
+
+    fun habilitarCuenta(cuenta: Map<String, String>) {
+        if (!puedeGestionar || ocupado) return
+
+        val id = cuenta["id"]?.toIntOrNull()
+        if (id == null) {
+            mensaje = "La cuenta no tiene un identificador válido."
+            error = true
+            return
+        }
+
+        scope.launch {
+            ocupado = true
+            try {
+                val habilitada = withContext(Dispatchers.IO) { repository.habilitarUsuario(id) }
+                if (habilitada) {
+                    mensaje = "Cuenta de ${cuenta["nombre"].orEmpty()} habilitada. Ya puede iniciar sesión."
+                    error = false
+                    recargarDespuesDeOperacion()
+                } else {
+                    mensaje = "No se pudo habilitar la cuenta. Intenta nuevamente."
+                    error = true
+                }
+            } catch (_: Exception) {
+                mensaje = "Ocurrió un error al habilitar la cuenta."
                 error = true
             } finally {
                 ocupado = false
@@ -403,7 +445,7 @@ fun AdminScreen(
         bottomBar = {
             NavigationBar(containerColor = colores.surface, contentColor = colores.onSurface) {
                 SeccionAdmin.entries
-                    .filter { puedeGestionar || it != SeccionAdmin.NUEVA }
+                    .filter { (puedeGestionar || it != SeccionAdmin.NUEVA) && it != SeccionAdmin.SOLICITUDES }
                     .forEach { s ->
                         NavigationBarItem(
                             selected = seccion == s,
@@ -459,6 +501,7 @@ fun AdminScreen(
                     totalPendientes = pendientes.size,
                     totalVencidas = vencidas.size,
                     totalPagadas = pagadas.size,
+                    solicitudesPendientes = solicitudes.size,
                     porCobrar = formatoMoneda.format(totalPorCobrar),
                     recaudado = formatoMoneda.format(totalRecaudado),
                     habilitado = !ocupado,
@@ -470,6 +513,8 @@ fun AdminScreen(
                         filtro = FiltroDeuda.VENCIDAS; busqueda = ""; seccion = SeccionAdmin.DEUDAS
                     },
                     onVerClientes = { seccion = SeccionAdmin.CLIENTES },
+                    onVerSolicitudes = { seccion = SeccionAdmin.SOLICITUDES },
+                    onVerTickets = { seccion = SeccionAdmin.TICKETS },
                     onActualizar = { refrescar() },
                     onConfiguracion = { mostrarConfiguracion = true },
                     onCerrarSesion = onCerrarSesion
@@ -499,6 +544,19 @@ fun AdminScreen(
                         busqueda = nombre
                         seccion = SeccionAdmin.DEUDAS
                     }
+                )
+
+                SeccionAdmin.TICKETS -> PanelTickets(
+                    viewModel = ticketViewModel,
+                    miRol = usuario["rol"].orEmpty(),
+                    puedeCerrar = puedeGestionar
+                )
+
+                SeccionAdmin.SOLICITUDES -> PanelSolicitudes(
+                    solicitudes = solicitudes,
+                    puedeGestionar = puedeGestionar,
+                    habilitado = !ocupado,
+                    onHabilitar = { habilitarCuenta(it) }
                 )
 
                 SeccionAdmin.NUEVA -> if (puedeGestionar) {
@@ -613,6 +671,7 @@ private fun PanelResumen(
     totalPendientes: Int,
     totalVencidas: Int,
     totalPagadas: Int,
+    solicitudesPendientes: Int,
     porCobrar: String,
     recaudado: String,
     habilitado: Boolean,
@@ -620,6 +679,8 @@ private fun PanelResumen(
     onVerDeudas: () -> Unit,
     onVerVencidas: () -> Unit,
     onVerClientes: () -> Unit,
+    onVerSolicitudes: () -> Unit,
+    onVerTickets: () -> Unit,
     onActualizar: () -> Unit,
     onConfiguracion: () -> Unit,
     onCerrarSesion: () -> Unit
@@ -631,6 +692,8 @@ private fun PanelResumen(
         add(Acceso("📄", "Ver deudas", onVerDeudas))
         add(Acceso("⏰", "Deudas vencidas", onVerVencidas))
         add(Acceso("👥", "Clientes", onVerClientes))
+        if (puedeGestionar) add(Acceso("📝", "Solicitudes de cuenta ($solicitudesPendientes)", onVerSolicitudes))
+        add(Acceso("🎫", "Tickets", onVerTickets))
         add(Acceso("🔄", "Actualizar datos", onActualizar))
         add(Acceso("⚙️", "Configuración", onConfiguracion))
     }
@@ -784,6 +847,81 @@ private fun BotonAcceso(
                 textAlign = TextAlign.Center,
                 fontSize = 14.sp
             )
+        }
+    }
+}
+
+@Composable
+private fun PanelSolicitudes(
+    solicitudes: List<Map<String, String>>,
+    puedeGestionar: Boolean,
+    habilitado: Boolean,
+    onHabilitar: (Map<String, String>) -> Unit
+) {
+    val colores = MaterialTheme.colorScheme
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text(
+                text = "Solicitudes de cuenta",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
+        item {
+            Text(
+                text = "Los usuarios nuevos no pueden iniciar sesión hasta que un gestor habilite su cuenta.",
+                color = colores.onSurfaceVariant
+            )
+        }
+
+        if (solicitudes.isEmpty()) {
+            item {
+                Text(
+                    text = "No hay cuentas pendientes de aprobación.",
+                    color = colores.onSurfaceVariant
+                )
+            }
+        }
+
+        items(solicitudes, key = { it["id"].orEmpty() }) { cuenta ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = colores.surface,
+                    contentColor = colores.onSurface
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = cuenta["nombre"].orEmpty(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp
+                    )
+                    Text(text = cuenta["correo"].orEmpty(), color = colores.onSurfaceVariant)
+                    Text(
+                        text = "RUT: " + ValidacionesRut.formatear(cuenta["rut"].orEmpty()),
+                        color = colores.onSurfaceVariant
+                    )
+                    if (puedeGestionar) {
+                        BotonPrincipal(
+                            texto = "Habilitar cuenta",
+                            onClick = { onHabilitar(cuenta) },
+                            habilitado = habilitado,
+                            modifier = Modifier.fillMaxWidth(),
+                            altura = 48.dp
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -1195,7 +1333,7 @@ private fun OpcionCuotas(
 ) {
     val colores = MaterialTheme.colorScheme
     val formatoMoneda = remember { NumberFormat.getCurrencyInstance(Locale("es", "CL")) }
-    val opciones = remember { (2..12).toList() }
+    val opciones = remember { (2..72).toList() }
     val montoIngresado = monto.trim().replace(",", ".").toDoubleOrNull()
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -14,18 +14,18 @@ object EstilosCampo {
     fun colores(): TextFieldColors {
         val c = MaterialTheme.colorScheme
         return OutlinedTextFieldDefaults.colors(
-            // Estado normal: gris
+
             unfocusedBorderColor = c.outline,
             unfocusedLabelColor = c.onSurfaceVariant,
             unfocusedSupportingTextColor = c.onSurfaceVariant,
             focusedSupportingTextColor = c.onSurfaceVariant,
             unfocusedLeadingIconColor = c.onSurfaceVariant,
-            // Enfocado: color de marca
+
             focusedBorderColor = c.primary,
             focusedLabelColor = c.primary,
             focusedLeadingIconColor = c.primary,
             cursorColor = c.primary,
-            // Error: rojo
+
             errorBorderColor = c.error,
             errorLabelColor = c.error,
             errorSupportingTextColor = c.error,

@@ -12,7 +12,7 @@ data class LoginResponse(
     val rol: String,
     val tieneFoto: Boolean = false,
     val fotoUrl: String? = null,
-    val habilitado: Boolean = false,
+    val habilitado: Boolean = true,
     val bloqueado: Boolean = false
 )
 
@@ -35,7 +35,9 @@ data class UsuarioResponse(
     val rol: String,
     val pregunta1: String? = null,
     val pregunta2: String? = null,
-    val tieneFoto: Boolean = false
+    val tieneFoto: Boolean = false,
+    val fotoUrl: String? = null,
+    val habilitado: Boolean = true
 )
 
 data class ActualizarUsuarioRequest(

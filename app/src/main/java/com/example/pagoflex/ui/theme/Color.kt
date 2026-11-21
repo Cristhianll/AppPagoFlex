@@ -3,7 +3,6 @@ package com.example.pagoflex.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-
 val Primario = Color(0xFF0B2D4D)
 val PrimarioOscuro = Color(0xFF071F36)
 val PrimarioClaro = Color(0xFFDCEAF5)

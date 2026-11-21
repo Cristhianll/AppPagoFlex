@@ -15,11 +15,13 @@ import com.example.pagoflex.ui.navigation.PagoFlexApp
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.FormularioViewModel
 import com.example.pagoflex.viewmodel.PagoViewModel
+import com.example.pagoflex.viewmodel.TicketViewModel
 
 class MainActivity : ComponentActivity() {
 
     private val formularioViewModel: FormularioViewModel by viewModels()
     private val pagoViewModel: PagoViewModel by viewModels()
+    private val ticketViewModel: TicketViewModel by viewModels()
 
     private val solicitarRedLocal =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -47,7 +49,8 @@ class MainActivity : ComponentActivity() {
                 PagoFlexApp(
                     repository = repository,
                     formularioViewModel = formularioViewModel,
-                    pagoViewModel = pagoViewModel
+                    pagoViewModel = pagoViewModel,
+                    ticketViewModel = ticketViewModel
                 )
             }
         }

@@ -99,7 +99,6 @@ fun PagoFlexTheme(
         )
     }
 
-
     var eleccionManual by remember(preferencias) {
         mutableStateOf<Boolean?>(
             if (preferencias.contains("modo_oscuro")) {
@@ -132,7 +131,6 @@ fun PagoFlexTheme(
             eleccionManual = null
         }
     )
-
 
     CompositionLocalProvider(
         LocalControlTemaPagoFlex provides controlTema

@@ -14,6 +14,7 @@ import com.example.pagoflex.data.PagoFlexRepository
 import com.example.pagoflex.ui.components.AvatarUsuario
 import com.example.pagoflex.ui.components.BarraNavegacionPagoFlex
 import com.example.pagoflex.ui.components.BotonPrincipal
+import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.MarcaHorizontalPagoFlex
 import com.example.pagoflex.ui.components.SeccionPagoFlex
 import com.example.pagoflex.ui.components.TarjetaSeccion
@@ -33,6 +34,7 @@ fun DashboardScreen(
     onIrAPagos: () -> Unit,
     onIrAHistorial: () -> Unit,
     onSeleccionarOpcionPerfil: (String) -> Unit,
+    onReportarProblema: () -> Unit = {},
     onActualizar: () -> Unit = {},
     cargando: Boolean = false
 ) {
@@ -206,6 +208,13 @@ fun DashboardScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
+
+                    BotonSecundario(
+                        texto = "Reportar un problema",
+                        onClick = onReportarProblema,
+                        modifier = Modifier.fillMaxWidth(),
+                        altura = 48.dp
+                    )
                 }
             }
 

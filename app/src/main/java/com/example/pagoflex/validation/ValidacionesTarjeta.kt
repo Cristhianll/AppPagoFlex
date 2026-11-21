@@ -4,7 +4,6 @@ import java.util.Calendar
 
 object ValidacionesTarjeta {
 
-
     fun vencimientoVigente(vencimiento: String): Boolean {
         if (
             !vencimiento.matches(

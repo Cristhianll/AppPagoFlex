@@ -14,7 +14,7 @@ data class DeudaUiState(
     val deudas: List<DeudaResponse> = emptyList(),
     val cargando: Boolean = false,
     val error: String? = null,
-    // filtros
+
     val filtroEstado: String? = null,
     val filtroDesde: String? = null,
     val filtroHasta: String? = null,

@@ -13,6 +13,7 @@ import com.example.pagoflex.ui.screens.*
 import com.example.pagoflex.validation.ValidacionesTarjeta
 import com.example.pagoflex.viewmodel.FormularioViewModel
 import com.example.pagoflex.viewmodel.PagoViewModel
+import com.example.pagoflex.viewmodel.TicketViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,7 +23,8 @@ import kotlinx.coroutines.withContext
 fun PagoFlexApp(
     repository: PagoFlexRepository,
     formularioViewModel: FormularioViewModel,
-    pagoViewModel: PagoViewModel
+    pagoViewModel: PagoViewModel,
+    ticketViewModel: TicketViewModel
 ) {
     val scope = rememberCoroutineScope()
     val colores = MaterialTheme.colorScheme
@@ -95,6 +97,7 @@ fun PagoFlexApp(
     fun cerrarSesion() {
         pagoViewModel.limpiarSesion()
         formularioViewModel.onLimpiar()
+        ticketViewModel.limpiar()
 
         sesion = null
         modo = "login"
@@ -317,7 +320,7 @@ fun PagoFlexApp(
                     correo = ""
                     clave = ""
                     mensajeExito = true
-                    mensaje = "Cuenta creada correctamente. Ahora inicia sesión."
+                    mensaje = "Cuenta creada. Un gestor debe habilitarla antes de que puedas iniciar sesión."
                     formularioViewModel.onLimpiar()
                     modo = "login"
                 } else {
@@ -458,6 +461,7 @@ fun PagoFlexApp(
             AdminScreen(
                 repository = repository,
                 usuario = sesion.orEmpty(),
+                ticketViewModel = ticketViewModel,
                 onCerrarSesion = { cerrarSesion() }
             )
         }
@@ -558,6 +562,14 @@ fun PagoFlexApp(
                                 )
                             }
 
+                            "tickets" -> {
+                                TicketsUsuarioScreen(
+                                    viewModel = ticketViewModel,
+                                    deudas = deudas,
+                                    onVolver = { irAInicio() }
+                                )
+                            }
+
                             "historial" -> {
                                 ResumenHistorialScreen(
                                     pagos = pagos,
@@ -574,6 +586,7 @@ fun PagoFlexApp(
                                     deudasPendientes = pendientes,
                                     cargando = cargandoDatos,
                                     onActualizar = { actualizarDatos() },
+                                    onReportarProblema = { pantalla = "tickets" },
                                     onPagarDeuda = { seleccionarDeuda(it) },
                                     onIrAPagos = { irAPagos() },
                                     onIrAHistorial = { irAHistorial() },
